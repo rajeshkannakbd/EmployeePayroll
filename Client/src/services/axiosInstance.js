@@ -6,22 +6,43 @@ const axiosInstance = axios.create({
     baseURL: "http://localhost:8080",
 });
 
-axiosInstance.interceptors.request.use((config) => {
-    const savedAuth = localStorage.getItem("payroll_auth");
+axiosInstance.interceptors.request.use(
+    (config) => {
 
-    if (savedAuth) {
-        try {
-            const auth = JSON.parse(savedAuth);
+        const savedAuth = localStorage.getItem("payroll_auth");
 
-            if (auth?.token) {
-                config.headers.Authorization = `Bearer ${auth.token}`;
+        let token = null;
+
+        if (savedAuth) {
+            try {
+                const auth = JSON.parse(savedAuth);
+                token = auth?.token;
+            } catch (error) {
+                console.error(
+                    "Invalid authentication data:",
+                    error
+                );
             }
-        } catch {
-            // Ignore invalid stored auth
         }
-    }
 
-    return config;
-});
+        const publicEndpoints = [
+            "/auth/login",
+            "/auth/signup",
+        ];
+
+        const isPublicEndpoint = publicEndpoints.some(
+            (endpoint) => config.url?.endsWith(endpoint)
+        );
+
+        if (token && !isPublicEndpoint) {
+            config.headers.Authorization = `Bearer ${token}`;
+        } else if (isPublicEndpoint) {
+            delete config.headers.Authorization;
+        }
+
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
 
 export default axiosInstance;

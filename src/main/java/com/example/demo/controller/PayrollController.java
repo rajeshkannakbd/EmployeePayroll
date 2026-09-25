@@ -89,7 +89,7 @@ public List<Payroll> getPayrollsByPayPeriod(
 
     return payrollService.getPayrollsByPayPeriod(payPeriod);
 }
-@GetMapping("/status    /{status}")
+@GetMapping("/status/{status}")
 public List<Payroll> getPayrollsByStatus(
         @PathVariable String status) {
 

@@ -3,7 +3,7 @@ import jakarta.validation.Valid;
 import com.example.demo.entity.Attendance;
 import com.example.demo.service.AttendanceService;
 import org.springframework.web.bind.annotation.*;
-import com.example.demo.dto.AttendanceRequest;
+import com.example.demo.dto.attendance.AttendanceRequest;
 import java.math.BigDecimal;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.oauth2.jwt.Jwt;

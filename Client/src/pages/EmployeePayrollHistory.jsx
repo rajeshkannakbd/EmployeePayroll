@@ -8,6 +8,8 @@ const EmployeePayrollHistory = () => {
     const [payrolls, setPayrolls] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
 
     useEffect(() => {
         fetchPayrollHistory();
@@ -25,6 +27,7 @@ const EmployeePayrollHistory = () => {
                     ? response.data
                     : []
             );
+            setPage(1);
         } catch (err) {
             console.error("Failed to load payroll history:", err);
 
@@ -40,9 +43,46 @@ const EmployeePayrollHistory = () => {
         }
     };
 
+    const totalRecords = payrolls.length;
+    const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
+    const safePage = Math.min(page, totalPages);
+
+    const paginatedPayrolls = payrolls.slice(
+        (safePage - 1) * pageSize,
+        safePage * pageSize
+    );
+
+    const pageStart =
+        totalRecords === 0 ? 0 : (safePage - 1) * pageSize + 1;
+    const pageEnd = Math.min(safePage * pageSize, totalRecords);
+
+    const getPageNumbers = () => {
+        const maxVisiblePages = 5;
+
+        if (totalPages <= maxVisiblePages) {
+            return Array.from({ length: totalPages }, (_, index) => index + 1);
+        }
+
+        let start = Math.max(1, safePage - 2);
+        let end = Math.min(totalPages, start + maxVisiblePages - 1);
+
+        if (end - start < maxVisiblePages - 1) {
+            start = Math.max(1, end - maxVisiblePages + 1);
+        }
+
+        return Array.from(
+            { length: end - start + 1 },
+            (_, index) => start + index
+        );
+    };
+
+    const changePage = (nextPage) => {
+        setPage(Math.min(Math.max(nextPage, 1), totalPages));
+    };
+
     if (loading) {
         return (
-            <div className="min-h-full bg-gray-50 flex items-center justify-center">
+            <div className="flex h-full min-h-0 items-center justify-center px-3 py-2">
                 <div className="text-center">
 
                     <div className="w-10 h-10 border-4 border-gray-200 border-t-green-600 rounded-full animate-spin mx-auto"></div>
@@ -57,28 +97,28 @@ const EmployeePayrollHistory = () => {
     }
 
     return (
-        <div className="min-h-full bg-gray-50 p-4 sm:p-6 lg:p-8">
+        <div className="flex h-full min-h-0 flex-col overflow-hidden px-3 py-2">
 
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+            <div className="mb-3 flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 
                 <div>
-                    <p className="text-sm font-medium text-green-600">
+                    <p className="text-[11px] font-semibold text-green-600">
                         Employee Self Service
                     </p>
 
-                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">
+                    <h1 className="mt-0.5 text-xl font-bold text-gray-900 sm:text-2xl">
                         Payslip History
                     </h1>
 
-                    <p className="text-gray-500 mt-2">
+                    <p className="mt-0.5 text-xs text-gray-500">
                         View your previous salary and payslip records.
                     </p>
                 </div>
 
                 <button
                     onClick={() => navigate("/")}
-                    className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-700 font-medium hover:bg-gray-50"
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
                 >
                     Back to Dashboard
                 </button>
@@ -87,15 +127,15 @@ const EmployeePayrollHistory = () => {
 
             {/* Error */}
             {error && (
-                <div className="bg-white border border-red-200 rounded-2xl p-6 mb-6">
+                <div className="mb-2 shrink-0 rounded-xl border border-red-200 bg-white px-3 py-2.5">
 
-                    <p className="text-red-600 font-medium">
+                    <p className="text-sm font-medium text-red-600">
                         {error}
                     </p>
 
                     <button
                         onClick={fetchPayrollHistory}
-                        className="mt-4 px-4 py-2 bg-green-600 text-white rounded-xl"
+                        className="mt-3 rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white"
                     >
                         Try Again
                     </button>
@@ -104,61 +144,65 @@ const EmployeePayrollHistory = () => {
             )}
 
             {/* Payroll Table */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="mt-1 flex min-h-0 flex-1 flex-col overflow-auto rounded-xl border border-gray-200 bg-white shadow-sm">
 
-                <div className="p-6 border-b border-gray-100">
+                <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-2.5">
+                    <div>
+                        <h2 className="text-sm font-semibold text-gray-900">
+                            My Payroll History
+                        </h2>
 
-                    <h2 className="text-lg font-semibold text-gray-900">
-                        My Payroll History
-                    </h2>
+                        <p className="mt-0.5 text-[11px] text-gray-500">
+                            Only your payroll records are shown.
+                        </p>
+                    </div>
 
-                    <p className="text-sm text-gray-500 mt-1">
-                        Only your payroll records are shown.
-                    </p>
-
+                    <span className="text-[11px] text-gray-500">
+                        {totalRecords} record{totalRecords === 1 ? "" : "s"}
+                    </span>
                 </div>
 
                 {payrolls.length === 0 ? (
 
-                    <div className="p-10 text-center text-gray-500">
+                    <div className="flex flex-1 items-center justify-center p-8 text-sm text-gray-500">
                         No payroll records available.
                     </div>
 
                 ) : (
+                    <>
+                    <div className="min-h-0 flex-1 overflow-auto scroll-smooth">
 
-                    <div className="overflow-x-auto">
+                        <table className="min-w-[820px] w-full">
 
-                        <table className="w-full">
-
-                            <thead className="bg-gray-50">
+                            <thead className="sticky top-0 z-10 bg-gray-50">
 
                                 <tr>
 
-                                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
+                                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-gray-500">
                                         Pay Period
                                     </th>
 
-                                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
+                                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-gray-500">
                                         Pay Date
                                     </th>
 
-                                    <th className="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
+                                    <th className="px-4 py-2.5 text-right text-[10px] font-bold uppercase tracking-wide text-gray-500">
                                         Gross Salary
                                     </th>
 
-                                    <th className="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
+                                    <th className="px-4 py-2.5 text-right text-[10px] font-bold uppercase tracking-wide text-gray-500">
                                         Deductions
                                     </th>
 
-                                    <th className="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
+                                    <th className="px-4 py-2.5 text-right text-[10px] font-bold uppercase tracking-wide text-gray-500">
                                         Net Salary
                                     </th>
 
-                                    <th className="text-center px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
+                                    <th className="px-4 py-2.5 text-center text-[10px] font-bold uppercase tracking-wide text-gray-500">
                                         Status
                                     </th>
 
-                                    <th className="text-center px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
+                                    <th className="px-4 py-2.5 text-center text-[10px] font-bold uppercase tracking-wide text-gray-500">
                                         Payslip
                                     </th>
 
@@ -168,7 +212,7 @@ const EmployeePayrollHistory = () => {
 
                             <tbody className="divide-y divide-gray-100">
 
-                                {payrolls.map((payroll) => {
+                                {paginatedPayrolls.map((payroll) => {
 
                                     const status = String(
                                         payroll.status || ""
@@ -180,39 +224,39 @@ const EmployeePayrollHistory = () => {
                                             className="hover:bg-gray-50"
                                         >
 
-                                            <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                                            <td className="px-4 py-2.5 text-xs font-medium text-gray-900">
                                                 {payroll.payPeriod || "-"}
                                             </td>
 
-                                            <td className="px-6 py-4 text-sm text-gray-600">
+                                            <td className="px-4 py-2.5 text-xs text-gray-600">
                                                 {payroll.payDate || "-"}
                                             </td>
 
-                                            <td className="px-6 py-4 text-sm text-right text-gray-700">
+                                            <td className="px-4 py-2.5 text-right text-xs text-gray-700">
                                                 ₹
                                                 {Number(
                                                     payroll.grossSalary || 0
                                                 ).toLocaleString("en-IN")}
                                             </td>
 
-                                            <td className="px-6 py-4 text-sm text-right text-gray-700">
+                                            <td className="px-4 py-2.5 text-right text-xs text-gray-700">
                                                 ₹
                                                 {Number(
                                                     payroll.totalDeductions || 0
                                                 ).toLocaleString("en-IN")}
                                             </td>
 
-                                            <td className="px-6 py-4 text-sm text-right font-semibold text-green-600">
+                                            <td className="px-4 py-2.5 text-right text-xs font-semibold text-green-600">
                                                 ₹
                                                 {Number(
                                                     payroll.netSalary || 0
                                                 ).toLocaleString("en-IN")}
                                             </td>
 
-                                            <td className="px-6 py-4 text-center">
+                                            <td className="px-4 py-2.5 text-center">
 
                                                 <span
-                                                    className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
+                                                    className={`inline-flex px-2 py-1 rounded-full text-[10px] font-semibold ${
                                                         status === "PAID"
                                                             ? "bg-green-100 text-green-700"
                                                             : status === "APPROVED"
@@ -225,7 +269,7 @@ const EmployeePayrollHistory = () => {
 
                                             </td>
 
-                                            <td className="px-6 py-4 text-center">
+                                            <td className="px-4 py-2.5 text-center">
 
                                                 <button
                                                     onClick={() =>
@@ -233,7 +277,7 @@ const EmployeePayrollHistory = () => {
                                                             `/payslip/${payroll.payrollId}`
                                                         )
                                                     }
-                                                    className="text-sm font-medium text-green-600 hover:text-green-700"
+                                                    className="text-xs font-semibold text-green-600 hover:text-green-700"
                                                 >
                                                     View Payslip
                                                 </button>
@@ -250,6 +294,66 @@ const EmployeePayrollHistory = () => {
 
                     </div>
 
+                    {totalRecords > 0 && (
+                        <div className="flex shrink-0 flex-col gap-2 border-t border-gray-200 bg-white px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                                <span>Rows per page</span>
+
+                                <select
+                                    value={pageSize}
+                                    onChange={(e) => {
+                                        setPageSize(Number(e.target.value));
+                                        setPage(1);
+                                    }}
+                                    className="rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 outline-none focus:border-green-500"
+                                >
+                                    <option value="10">10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                </select>
+
+                                <span className="ml-1">
+                                    {pageStart}-{pageEnd} of {totalRecords}
+                                </span>
+                            </div>
+
+                            <div className="flex items-center justify-end gap-1">
+                                <button
+                                    type="button"
+                                    disabled={safePage === 1}
+                                    onClick={() => changePage(safePage - 1)}
+                                    className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    Previous
+                                </button>
+
+                                {getPageNumbers().map((pageNumber) => (
+                                    <button
+                                        key={pageNumber}
+                                        type="button"
+                                        onClick={() => changePage(pageNumber)}
+                                        className={`min-w-8 rounded-lg px-2 py-1.5 text-xs font-semibold transition ${
+                                            pageNumber === safePage
+                                                ? "bg-green-600 text-white"
+                                                : "border border-gray-300 text-gray-700 hover:bg-gray-50"
+                                        }`}
+                                    >
+                                        {pageNumber}
+                                    </button>
+                                ))}
+
+                                <button
+                                    type="button"
+                                    disabled={safePage === totalPages}
+                                    onClick={() => changePage(safePage + 1)}
+                                    className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                 </>
                 )}
 
             </div>

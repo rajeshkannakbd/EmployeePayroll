@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.salary.SalaryStructureRequest;
 import com.example.demo.entity.SalaryStructure;
 import com.example.demo.service.SalaryStructureService;
 
@@ -23,7 +24,7 @@ public class SalaryStructureController {
     }
 
     // ---------------------------------------------------
-    // GET ALL SALARY STRUCTURES
+    // GET ALL
     // GET /salary-structures
     // ---------------------------------------------------
 
@@ -37,7 +38,7 @@ public class SalaryStructureController {
     }
 
     // ---------------------------------------------------
-    // GET SALARY STRUCTURE BY ID
+    // GET BY ID
     // GET /salary-structures/{id}
     // ---------------------------------------------------
 
@@ -59,12 +60,10 @@ public class SalaryStructureController {
     @PostMapping
     public ResponseEntity<SalaryStructure>
     createSalaryStructure(
-            @Valid @RequestBody SalaryStructure salaryStructure) {
+            @Valid @RequestBody SalaryStructureRequest request) {
 
         return ResponseEntity.ok(
-                salaryStructureService.createSalaryStructure(
-                        salaryStructure
-                )
+                salaryStructureService.createSalaryStructure(request)
         );
     }
 
@@ -77,12 +76,12 @@ public class SalaryStructureController {
     public ResponseEntity<SalaryStructure>
     updateSalaryStructure(
             @PathVariable Long id,
-            @Valid @RequestBody SalaryStructure salaryStructure) {
+            @Valid @RequestBody SalaryStructureRequest request) {
 
         return ResponseEntity.ok(
                 salaryStructureService.updateSalaryStructure(
                         id,
-                        salaryStructure
+                        request
                 )
         );
     }

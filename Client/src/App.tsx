@@ -22,6 +22,8 @@ import Payslip from "./pages/Payslip";
 import DepartmentManagement from "./pages/DepartmentManagement"
 import EmployeeAttendance from "./pages/EmployeeAttendance";
 import EmployeePayrollHistory from "./pages/EmployeePayrollHistory";
+import Signup from "./pages/Signup";
+import ChangePassword from "./pages/ChangePassword";
 
 function App() {
   return (
@@ -32,12 +34,15 @@ function App() {
           {/* =================================================
               PUBLIC ROUTE
           ================================================= */}
-
+           <Route
+             path="/change-password"
+               element={<ChangePassword />}
+            />
           <Route
             path="/login"
             element={<Login />}
           />
-
+          
           {/* =================================================
               PROTECTED ROUTES
           ================================================= */}

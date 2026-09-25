@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import axiosInstance from "../services/axiosInstance";
 import { useAuth } from "../context/AuthContext";
@@ -21,11 +21,21 @@ const Login = () => {
   // IF ALREADY LOGGED IN
   // --------------------------------------------------
 
-  useEffect(() => {
-    if (auth?.token) {
-      navigate("/", { replace: true });
-    }
-  }, [auth, navigate]);
+useEffect(() => {
+  if (!auth?.token) {
+    return;
+  }
+
+  if (
+    auth.role === "EMPLOYEE" &&
+    auth.mustChangePassword === true
+  ) {
+    navigate("/change-password", { replace: true });
+    return;
+  }
+
+  navigate("/", { replace: true });
+}, [auth, navigate]);
 
   // --------------------------------------------------
   // LOGIN
@@ -71,11 +81,21 @@ const Login = () => {
         return;
       }
 
-      // Save authentication data
+
       login(loginData);
 
-      // Go to dashboard
-      navigate("/", { replace: true });
+if (
+    loginData.role === "EMPLOYEE" &&
+    loginData.mustChangePassword
+) {
+    navigate("/change-password", {
+        replace: true,
+    });
+} else {
+    navigate("/", {
+        replace: true,
+    });
+}
     } catch (error) {
       console.error(
         "Login failed:",
@@ -131,7 +151,7 @@ const Login = () => {
               <div>
 
                 <h1 className="text-xl font-bold text-white">
-                  Ambigai Systems
+                  ABC PVT.LTD
                 </h1>
 
                 <p className="text-xs text-slate-400">
@@ -345,6 +365,21 @@ const Login = () => {
               </div>
 
             </div>
+
+            {/* <div className="mt-6 border-t border-slate-200 pt-5">
+
+  <p className="text-center text-sm text-slate-500">
+    Don't have an account?{" "}
+
+    <Link
+      to="/signup"
+      className="font-semibold text-green-700 hover:text-green-800"
+    >
+      Create Account
+    </Link>
+  </p>
+
+              </div> */}
 
             {/* FOOTER */}
 

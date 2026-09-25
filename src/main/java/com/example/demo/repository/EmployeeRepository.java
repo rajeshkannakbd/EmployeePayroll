@@ -20,4 +20,6 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
             String firstName,
             String lastName
     );
+    
+    boolean existsByDepartment_DepartmentId(Long departmentId);
 }

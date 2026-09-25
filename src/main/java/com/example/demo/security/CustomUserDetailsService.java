@@ -1,13 +1,11 @@
 package com.example.demo.security;
 
 import java.util.List;
-
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-
 import com.example.demo.entity.Employee;
 import com.example.demo.repository.EmployeeRepository;
 
@@ -94,29 +92,6 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         if (employeeByPhone.isPresent()) {
             return employeeByPhone.get();
-        }
-
-        // 4. Full Name
-        String[] nameParts = identifier.split("\\s+", 2);
-
-        if (nameParts.length == 2) {
-
-            List<Employee> employees =
-                    employeeRepository
-                            .findByFirstNameIgnoreCaseAndLastNameIgnoreCase(
-                                    nameParts[0],
-                                    nameParts[1]
-                            );
-
-            if (employees.size() == 1) {
-                return employees.get(0);
-            }
-
-            if (employees.size() > 1) {
-                throw new UsernameNotFoundException(
-                        "Multiple employees found with this name. Use employee code, email or mobile."
-                );
-            }
         }
 
         return null;

@@ -1,12 +1,14 @@
 package com.example.demo.controller;
 
-import com.example.demo.entity.Employee;
+import com.example.demo.dto.employee.EmployeeRequest;
+import com.example.demo.dto.employee.EmployeeResponse;
 import com.example.demo.service.EmployeeService;
+
+import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.oauth2.jwt.Jwt;
-
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +25,7 @@ public class EmployeeController {
         this.employeeService = employeeService;
     }
 
+
     // =========================================================
     // EMPLOYEE SELF PROFILE
     // EMPLOYEE can access only their own profile
@@ -31,7 +34,7 @@ public class EmployeeController {
 
     @PreAuthorize("hasRole('EMPLOYEE')")
     @GetMapping("/me")
-    public ResponseEntity<Employee> getMyProfile(
+    public ResponseEntity<EmployeeResponse> getMyProfile(
             @AuthenticationPrincipal Jwt jwt
     ) {
 
@@ -39,7 +42,7 @@ public class EmployeeController {
                 ((Number) jwt.getClaim("employeeId"))
                         .longValue();
 
-        Employee employee =
+        EmployeeResponse employee =
                 employeeService.getEmployeeById(employeeId);
 
         return ResponseEntity.ok(employee);
@@ -54,9 +57,9 @@ public class EmployeeController {
 
     @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
     @GetMapping
-    public ResponseEntity<List<Employee>> getAllEmployees() {
+    public ResponseEntity<List<EmployeeResponse>> getAllEmployees() {
 
-        List<Employee> employees =
+        List<EmployeeResponse> employees =
                 employeeService.getAllEmployees();
 
         return ResponseEntity.ok(employees);
@@ -71,11 +74,11 @@ public class EmployeeController {
 
     @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
     @GetMapping("/{id}")
-    public ResponseEntity<Employee> getEmployeeById(
+    public ResponseEntity<EmployeeResponse> getEmployeeById(
             @PathVariable Long id
     ) {
 
-        Employee employee =
+        EmployeeResponse employee =
                 employeeService.getEmployeeById(id);
 
         return ResponseEntity.ok(employee);
@@ -90,12 +93,12 @@ public class EmployeeController {
 
     @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
     @PostMapping
-    public ResponseEntity<Employee> createEmployee(
-            @RequestBody Employee employee
+    public ResponseEntity<EmployeeResponse> createEmployee(
+            @Valid @RequestBody EmployeeRequest request
     ) {
 
-        Employee savedEmployee =
-                employeeService.createEmployee(employee);
+        EmployeeResponse savedEmployee =
+                employeeService.createEmployee(request);
 
         return ResponseEntity.ok(savedEmployee);
     }
@@ -109,15 +112,15 @@ public class EmployeeController {
 
     @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
     @PutMapping("/{id}")
-    public ResponseEntity<Employee> updateEmployee(
+    public ResponseEntity<EmployeeResponse> updateEmployee(
             @PathVariable Long id,
-            @RequestBody Employee employee
+            @Valid @RequestBody EmployeeRequest request
     ) {
 
-        Employee updatedEmployee =
+        EmployeeResponse updatedEmployee =
                 employeeService.updateEmployee(
                         id,
-                        employee
+                        request
                 );
 
         return ResponseEntity.ok(updatedEmployee);

@@ -1,27 +1,34 @@
 package com.example.demo.service;
 
+import com.example.demo.dto.salary.SalaryStructureRequest;
+import com.example.demo.entity.Employee;
 import com.example.demo.entity.SalaryStructure;
+import com.example.demo.entity.SalaryTemplate;
+import com.example.demo.repository.EmployeeRepository;
 import com.example.demo.repository.SalaryStructureRepository;
+import com.example.demo.repository.SalaryTemplateRepository;
+
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class SalaryStructureService {
 
     private final SalaryStructureRepository salaryStructureRepository;
-
-    public SalaryStructureService(
-            SalaryStructureRepository salaryStructureRepository) {
-
-        this.salaryStructureRepository = salaryStructureRepository;
-    }
+    private final EmployeeRepository employeeRepository;
+    private final SalaryTemplateRepository salaryTemplateRepository;
 
     // ---------------------------------------------------
     // GET ALL
     // ---------------------------------------------------
 
+    @Transactional(readOnly = true)
     public List<SalaryStructure> getAllSalaryStructures() {
 
         return salaryStructureRepository.findAll();
@@ -31,21 +38,30 @@ public class SalaryStructureService {
     // CREATE
     // ---------------------------------------------------
 
+    @Transactional
     public SalaryStructure createSalaryStructure(
-            SalaryStructure salaryStructure) {
+            SalaryStructureRequest request) {
 
-        if (salaryStructure.getEmployee() == null
-                || salaryStructure.getEmployee().getEmployeeId() == null) {
+        // ------------------------------------------------
+        // EMPLOYEE
+        // ------------------------------------------------
 
-            throw new RuntimeException("Employee is required");
-        }
+        Employee employee = employeeRepository
+                .findById(request.getEmployeeId())
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Employee not found"
+                        )
+                );
 
-        Long employeeId =
-                salaryStructure.getEmployee().getEmployeeId();
+        // ------------------------------------------------
+        // ONE SALARY STRUCTURE PER EMPLOYEE
+        // ------------------------------------------------
 
-        // One salary structure per employee
         if (salaryStructureRepository
-                .findByEmployee_EmployeeId(employeeId)
+                .findByEmployee_EmployeeId(
+                        request.getEmployeeId()
+                )
                 .isPresent()) {
 
             throw new RuntimeException(
@@ -53,46 +69,87 @@ public class SalaryStructureService {
             );
         }
 
-        // Make optional fields safe
+        // ------------------------------------------------
+        // CREATE ENTITY
+        // ------------------------------------------------
+
+        SalaryStructure salaryStructure =
+                new SalaryStructure();
+
+        salaryStructure.setEmployee(employee);
+
+        // ------------------------------------------------
+        // TEMPLATE
+        // ------------------------------------------------
+
+        if (request.getTemplateId() != null) {
+
+            SalaryTemplate template =
+                    salaryTemplateRepository
+                            .findById(request.getTemplateId())
+                            .orElseThrow(() ->
+                                    new RuntimeException(
+                                            "Salary template not found"
+                                    )
+                            );
+
+            salaryStructure.setTemplate(template);
+        }
+
+        // ------------------------------------------------
+        // SALARY VALUES
+        // ------------------------------------------------
+
+        salaryStructure.setBasicSalary(
+                request.getBasicSalary()
+        );
+
         salaryStructure.setHra(
-                zeroIfNull(salaryStructure.getHra())
+                zeroIfNull(request.getHra())
         );
 
         salaryStructure.setConveyance(
-                zeroIfNull(salaryStructure.getConveyance())
+                zeroIfNull(request.getConveyance())
         );
 
         salaryStructure.setSpecialAllowance(
-                zeroIfNull(salaryStructure.getSpecialAllowance())
+                zeroIfNull(request.getSpecialAllowance())
         );
 
         salaryStructure.setOtherAllowance(
-                zeroIfNull(salaryStructure.getOtherAllowance())
+                zeroIfNull(request.getOtherAllowance())
         );
 
+        // ------------------------------------------------
+        // DEDUCTIONS
+        // ------------------------------------------------
+
         salaryStructure.setEpf(
-                zeroIfNull(salaryStructure.getEpf())
+                zeroIfNull(request.getEpf())
         );
 
         salaryStructure.setProfessionalTax(
-                zeroIfNull(salaryStructure.getProfessionalTax())
+                zeroIfNull(request.getProfessionalTax())
         );
 
         salaryStructure.setTds(
-                zeroIfNull(salaryStructure.getTds())
+                zeroIfNull(request.getTds())
         );
 
         salaryStructure.setOtherDeductions(
-                zeroIfNull(salaryStructure.getOtherDeductions())
+                zeroIfNull(request.getOtherDeductions())
         );
 
-        return salaryStructureRepository.save(salaryStructure);
+        return salaryStructureRepository.save(
+                salaryStructure
+        );
     }
 
     // ---------------------------------------------------
     // GET BY ID
     // ---------------------------------------------------
 
+    @Transactional(readOnly = true)
     public SalaryStructure getSalaryStructureById(Long id) {
 
         return salaryStructureRepository.findById(id)
@@ -107,9 +164,10 @@ public class SalaryStructureService {
     // UPDATE
     // ---------------------------------------------------
 
+    @Transactional
     public SalaryStructure updateSalaryStructure(
             Long id,
-            SalaryStructure salaryStructure) {
+            SalaryStructureRequest request) {
 
         SalaryStructure existingSalaryStructure =
                 salaryStructureRepository.findById(id)
@@ -119,46 +177,80 @@ public class SalaryStructureService {
                                 )
                         );
 
-        // Do not change employee during normal edit
-        // Employee is already associated with this salary structure.
+        // ------------------------------------------------
+        // EMPLOYEE IS NOT CHANGED DURING NORMAL EDIT
+        // ------------------------------------------------
 
-        // Basic salary
+        // ------------------------------------------------
+        // TEMPLATE
+        // ------------------------------------------------
+
+        if (request.getTemplateId() != null) {
+
+            SalaryTemplate template =
+                    salaryTemplateRepository
+                            .findById(request.getTemplateId())
+                            .orElseThrow(() ->
+                                    new RuntimeException(
+                                            "Salary template not found"
+                                    )
+                            );
+
+            existingSalaryStructure.setTemplate(
+                    template
+            );
+
+        } else {
+
+            existingSalaryStructure.setTemplate(null);
+        }
+
+        // ------------------------------------------------
+        // BASIC SALARY
+        // ------------------------------------------------
+
         existingSalaryStructure.setBasicSalary(
-                salaryStructure.getBasicSalary()
+                request.getBasicSalary()
         );
 
-        // Earnings
+        // ------------------------------------------------
+        // EARNINGS
+        // ------------------------------------------------
+
         existingSalaryStructure.setHra(
-                zeroIfNull(salaryStructure.getHra())
+                zeroIfNull(request.getHra())
         );
 
         existingSalaryStructure.setConveyance(
-                zeroIfNull(salaryStructure.getConveyance())
+                zeroIfNull(request.getConveyance())
         );
 
         existingSalaryStructure.setSpecialAllowance(
-                zeroIfNull(salaryStructure.getSpecialAllowance())
+                zeroIfNull(request.getSpecialAllowance())
         );
 
         existingSalaryStructure.setOtherAllowance(
-                zeroIfNull(salaryStructure.getOtherAllowance())
+                zeroIfNull(request.getOtherAllowance())
         );
 
-        // Deductions
+        // ------------------------------------------------
+        // DEDUCTIONS
+        // ------------------------------------------------
+
         existingSalaryStructure.setEpf(
-                zeroIfNull(salaryStructure.getEpf())
+                zeroIfNull(request.getEpf())
         );
 
         existingSalaryStructure.setProfessionalTax(
-                zeroIfNull(salaryStructure.getProfessionalTax())
+                zeroIfNull(request.getProfessionalTax())
         );
 
         existingSalaryStructure.setTds(
-                zeroIfNull(salaryStructure.getTds())
+                zeroIfNull(request.getTds())
         );
 
         existingSalaryStructure.setOtherDeductions(
-                zeroIfNull(salaryStructure.getOtherDeductions())
+                zeroIfNull(request.getOtherDeductions())
         );
 
         return salaryStructureRepository.save(
@@ -170,6 +262,7 @@ public class SalaryStructureService {
     // DELETE
     // ---------------------------------------------------
 
+    @Transactional
     public void deleteSalaryStructure(Long id) {
 
         SalaryStructure existingSalaryStructure =
@@ -180,7 +273,9 @@ public class SalaryStructureService {
                                 )
                         );
 
-        salaryStructureRepository.delete(existingSalaryStructure);
+        salaryStructureRepository.delete(
+                existingSalaryStructure
+        );
     }
 
     // ---------------------------------------------------
@@ -190,22 +285,37 @@ public class SalaryStructureService {
     public BigDecimal calculatedGrossSalary(
             SalaryStructure salaryStructure) {
 
-        return zeroIfNull(salaryStructure.getBasicSalary())
-                .add(zeroIfNull(salaryStructure.getHra()))
-                .add(zeroIfNull(salaryStructure.getConveyance()))
-                .add(zeroIfNull(
+        return zeroIfNull(
+                salaryStructure.getBasicSalary()
+        )
+        .add(
+                zeroIfNull(
+                        salaryStructure.getHra()
+                )
+        )
+        .add(
+                zeroIfNull(
+                        salaryStructure.getConveyance()
+                )
+        )
+        .add(
+                zeroIfNull(
                         salaryStructure.getSpecialAllowance()
-                ))
-                .add(zeroIfNull(
+                )
+        )
+        .add(
+                zeroIfNull(
                         salaryStructure.getOtherAllowance()
-                ));
+                )
+        );
     }
 
     // ---------------------------------------------------
     // NULL SAFE DECIMAL
     // ---------------------------------------------------
 
-    private BigDecimal zeroIfNull(BigDecimal value) {
+    private BigDecimal zeroIfNull(
+            BigDecimal value) {
 
         return value != null
                 ? value

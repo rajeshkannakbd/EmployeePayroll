@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axiosInstance from "../services/axiosInstance";
 import { useParams } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const API_BASE_URL = "http://localhost:8080";
 
@@ -18,6 +19,7 @@ function Payslip() {
   const [payslip, setPayslip] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { auth } = useAuth();
 
   // Later we can get this from React Router.
   const { payrollId } = useParams();
@@ -27,34 +29,70 @@ function Payslip() {
   }, [payrollId]);
 
   const fetchPayslip = async () => {
-    try {
-      setLoading(true);
-      setError("");
+  try {
+    setLoading(true);
+    setError("");
 
-      const response = await axiosInstance.get(
-        `${API_BASE_URL}/payrolls/${payrollId}/payslip`
+    let endpoint;
+
+    if (auth?.role === "EMPLOYEE") {
+      endpoint =
+        `${API_BASE_URL}/payrolls/me/${payrollId}/payslip`;
+    } else if (
+      auth?.role === "HR" ||
+      auth?.role === "ADMIN"
+    ) {
+      endpoint =
+        `${API_BASE_URL}/payrolls/${payrollId}/payslip`;
+    } else {
+      setError("Your account role could not be identified.");
+      return;
+    }
+
+    console.log("Payslip endpoint:", endpoint);
+    console.log("Logged-in role:", auth?.role);
+
+    const response =
+      await axiosInstance.get(endpoint);
+
+    setPayslip(response.data);
+
+  } catch (error) {
+
+    console.error(
+      "Failed to fetch payslip:",
+      error
+    );
+
+    if (error.response?.status === 401) {
+
+      setError(
+        "Your session has expired. Please login again."
       );
 
-      setPayslip(response.data);
+    } else if (error.response?.status === 403) {
 
-    } catch (error) {
-      console.error("Failed to fetch payslip:", error);
+      setError(
+        "You do not have permission to view this payslip."
+      );
 
-      if (error.response) {
-        setError(
-          error.response.data?.message ||
-            "Failed to load payslip from server."
-        );
-      } else {
-        setError(
-          "Cannot connect to the Spring Boot backend."
-        );
-      }
+    } else if (error.response?.data?.message) {
 
-    } finally {
-      setLoading(false);
+      setError(
+        error.response.data.message
+      );
+
+    } else {
+
+      setError(
+        "Failed to load payslip from server."
+      );
     }
-  };
+
+  } finally {
+    setLoading(false);
+  }
+};
 
   // =========================
   // LOADING
@@ -141,13 +179,13 @@ function Payslip() {
   ];
 
   return (
- <div className="min-h-screen bg-slate-200 px-4 py-6 print:bg-white print:px-0 print:py-0">
+ <div className="min-h-screen print:break-inside-avoid bg-slate-200 px-4 py-6 print:bg-white print:px-0 print:py-0">
 <div className="mx-auto w-full max-w-[1150px] overflow-hidden bg-white shadow-xl print:max-w-none print:border-0 print:shadow-none">      
     {/* =====================================================
             COMPANY HEADER
         ====================================================== */}
 
-        <header className="border-b-2 border-slate-800">
+        <header className="border-b-2 print:break-inside-avoid border-slate-800">
 
   <div className="flex flex-col justify-between gap-5 px-8 py-6 md:flex-row md:items-center">
 
@@ -155,7 +193,7 @@ function Payslip() {
     <div className="flex items-center gap-4">
 
       <div className="flex h-20 w-20 items-center justify-center rounded-xl border-2 border-green-800 text-4xl font-extrabold text-green-800">
-        A
+        ABC
       </div>
 
       <div>
@@ -200,7 +238,7 @@ function Payslip() {
             TITLE
         ====================================================== */}
 
-        <section className="border-b border-slate-300 px-8 py-5">
+        <section className="border-b print:break-inside-avoid border-slate-300 px-8 py-5">
 
   <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
 
@@ -247,7 +285,7 @@ function Payslip() {
             EMPLOYEE + COMPANY DETAILS
         ====================================================== */}
 
-       <section className="grid grid-cols-1 gap-0 px-6 pt-5 md:grid-cols-2">
+       <section className="grid grid-cols-1 gap-0 px-6 pt-5 print:break-inside-avoid md:grid-cols-2">
 
   {/* EMPLOYEE DETAILS */}
 
@@ -324,7 +362,7 @@ function Payslip() {
   </div>
 
 </section>
-<section className="grid grid-cols-1 gap-0 px-6 pt-3 md:grid-cols-3">
+<section className="grid grid-cols-1 print:break-inside-avoid gap-0 px-6 pt-3 md:grid-cols-3">
 
   <div className="border border-slate-300 px-4 py-3">
     <p className="text-xs font-semibold uppercase text-slate-500">
@@ -361,7 +399,7 @@ function Payslip() {
     EARNINGS + DEDUCTIONS
 ====================================================== */}
 
-<section className="px-6 pt-6">
+<section className="px-6 print:break-inside-avoid pt-6">
 
   <div className="grid grid-cols-1 overflow-hidden border border-slate-300 md:grid-cols-2">
 
@@ -530,7 +568,7 @@ function Payslip() {
     BOTTOM INFORMATION
 ====================================================== */}
 
-<section className="grid grid-cols-1 gap-4 px-6 py-5 md:grid-cols-3">
+<section className="grid grid-cols-1 print:break-inside-avoid gap-4 px-6 py-5 md:grid-cols-3">
 
   {/* Attendance Summary */}
   <div className="overflow-hidden border border-slate-300">
@@ -686,7 +724,7 @@ function Payslip() {
     FOOTER
 ====================================================== */}
 
-<footer className="border-t border-slate-300 px-6 py-4">
+<footer className="border-t print:break-inside-avoid border-slate-300 px-6 py-4">
 
   <div className="flex flex-col justify-between gap-3 text-xs text-slate-500 md:flex-row">
 

@@ -1,8 +1,11 @@
 package com.example.demo.controller;
 
-import com.example.demo.entity.Department;
+import com.example.demo.dto.department.DepartmentRequest;
+import com.example.demo.dto.department.DepartmentResponse;
 import com.example.demo.service.DepartmentService;
+
 import jakarta.validation.Valid;
+
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,50 +17,59 @@ public class DepartmentController {
     private final DepartmentService departmentService;
 
     public DepartmentController(
-            DepartmentService departmentService) {
-
+            DepartmentService departmentService
+    ) {
         this.departmentService = departmentService;
     }
 
+
     // GET ALL DEPARTMENTS
     @GetMapping
-    public List<Department> getAllDepartments() {
+    public List<DepartmentResponse> getAllDepartments() {
 
         return departmentService.getAllDepartments();
     }
 
+
     // GET DEPARTMENT BY ID
     @GetMapping("/{id}")
-    public Department getDepartmentById(
-            @PathVariable Long id) {
+    public DepartmentResponse getDepartmentById(
+            @PathVariable Long id
+    ) {
 
         return departmentService.getDepartmentById(id);
     }
 
+
     // CREATE DEPARTMENT
     @PostMapping
-    public Department createDepartment(
-            @Valid @RequestBody Department department) {
+    public DepartmentResponse createDepartment(
+            @Valid @RequestBody DepartmentRequest request
+    ) {
 
-        return departmentService.createDepartment(department);
+        return departmentService.createDepartment(request);
     }
+
 
     // UPDATE DEPARTMENT
     @PutMapping("/{id}")
-    public Department updateDepartment(
+    public DepartmentResponse updateDepartment(
             @PathVariable Long id,
-            @Valid @RequestBody Department department) {
+            @Valid @RequestBody DepartmentRequest request
+    ) {
 
         return departmentService.updateDepartment(
                 id,
-                department
+                request
         );
     }
+
 
     // DELETE DEPARTMENT
     @DeleteMapping("/{id}")
     public void deleteDepartment(
-            @PathVariable Long id) {
+            @PathVariable Long id
+    ) {
 
         departmentService.deleteDepartment(id);
     }

@@ -1,1537 +1,897 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  Users,
+  UserCheck,
+  WalletCards,
+  Clock3,
+  CalendarDays,
+  ArrowUpRight,
+  CircleCheck,
+  CircleAlert,
+  IndianRupee,
+  ChevronRight,
+  Building2,
+} from "lucide-react";
+
 import axiosInstance from "../services/axiosInstance";
 import { useAuth } from "../context/AuthContext";
 
+const getCurrentMonth = () => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+};
+
+const formatCurrency = (value) =>
+  `₹${Number(value || 0).toLocaleString("en-IN")}`;
+
+const formatMonth = (value) => {
+  if (!value) return "-";
+
+  const [year, month] = String(value).split("-");
+  if (!year || !month) return value;
+
+  return new Date(Number(year), Number(month) - 1, 1).toLocaleDateString(
+    "en-IN",
+    {
+      month: "short",
+      year: "numeric",
+    }
+  );
+};
+
+const formatDate = (value) => {
+  if (!value) return "-";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+const getEmployeeName = (employee) =>
+  [employee?.firstName, employee?.lastName].filter(Boolean).join(" ") ||
+  employee?.employeeCode ||
+  "Employee";
+
+const StatusBadge = ({ status }) => {
+  const normalized = String(status || "UNKNOWN").toUpperCase();
+
+  const styles =
+    normalized === "PAID"
+      ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+      : normalized === "APPROVED"
+      ? "bg-blue-50 text-blue-700 border-blue-100"
+      : normalized === "GENERATED"
+      ? "bg-amber-50 text-amber-700 border-amber-100"
+      : "bg-slate-50 text-slate-600 border-slate-100";
+
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${styles}`}
+    >
+      {normalized}
+    </span>
+  );
+};
+
 const Dashboard = () => {
-    const navigate = useNavigate();
-    const { auth } = useAuth();
+  const navigate = useNavigate();
+  const { auth } = useAuth();
 
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
+  const role = auth?.role;
+  const currentMonth = getCurrentMonth();
 
-    // ==========================================
-    // ADMIN / HR DATA
-    // ==========================================
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-    const [employees, setEmployees] = useState([]);
-    const [payrolls, setPayrolls] = useState([]);
-    const [attendance, setAttendance] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [payrolls, setPayrolls] = useState([]);
+  const [attendance, setAttendance] = useState([]);
 
-    // ==========================================
-    // EMPLOYEE DATA
-    // ==========================================
+  const [myProfile, setMyProfile] = useState(null);
+  const [myAttendance, setMyAttendance] = useState([]);
+  const [myPayrolls, setMyPayrolls] = useState([]);
 
-    const [myProfile, setMyProfile] = useState(null);
-    const [myAttendance, setMyAttendance] = useState([]);
-    const [myPayrolls, setMyPayrolls] = useState([]);
+  useEffect(() => {
+    if (!auth?.token) return;
 
-    const role = auth?.role;
+    fetchDashboardData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth?.token, auth?.role]);
 
-    // ==========================================
-    // FETCH DASHBOARD DATA
-    // ==========================================
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError("");
 
-    useEffect(() => {
-        if (!auth?.token) {
-            return;
-        }
+      if (role === "EMPLOYEE") {
+        const [profileResponse, attendanceResponse, payrollResponse] =
+          await Promise.all([
+            axiosInstance.get("/employees/me"),
+            axiosInstance.get("/attendance/me"),
+            axiosInstance.get("/payrolls/me"),
+          ]);
 
-        fetchDashboardData();
-    }, [auth?.token, auth?.role]);
+        setMyProfile(profileResponse.data);
 
-    const fetchDashboardData = async () => {
-        try {
-            setLoading(true);
-            setError("");
-
-            // ==========================================
-            // EMPLOYEE DASHBOARD
-            // ==========================================
-
-            if (role === "EMPLOYEE") {
-                const [
-                    profileResponse,
-                    attendanceResponse,
-                    payrollResponse,
-                ] = await Promise.all([
-                    axiosInstance.get("/employees/me"),
-                    axiosInstance.get("/attendance/me"),
-                    axiosInstance.get("/payrolls/me"),
-                ]);
-
-                setMyProfile(profileResponse.data);
-
-                setMyAttendance(
-                    Array.isArray(attendanceResponse.data)
-                        ? attendanceResponse.data
-                        : []
-                );
-
-                setMyPayrolls(
-                    Array.isArray(payrollResponse.data)
-                        ? payrollResponse.data
-                        : []
-                );
-
-                return;
-            }
-
-            // ==========================================
-            // ADMIN / HR DASHBOARD
-            // ==========================================
-
-            const [
-                employeesResponse,
-                payrollResponse,
-                attendanceResponse,
-            ] = await Promise.all([
-                axiosInstance.get("/employees"),
-                axiosInstance.get("/payrolls"),
-                axiosInstance.get("/attendance"),
-            ]);
-
-            setEmployees(
-                Array.isArray(employeesResponse.data)
-                    ? employeesResponse.data
-                    : []
-            );
-
-            setPayrolls(
-                Array.isArray(payrollResponse.data)
-                    ? payrollResponse.data
-                    : []
-            );
-
-            setAttendance(
-                Array.isArray(attendanceResponse.data)
-                    ? attendanceResponse.data
-                    : []
-            );
-        } catch (err) {
-            console.error("Failed to load dashboard data:", err);
-
-            if (err.response?.status === 401) {
-                setError("Your session has expired. Please login again.");
-            } else if (err.response?.status === 403) {
-                setError(
-                    "You do not have permission to view this dashboard."
-                );
-            } else {
-                setError("Failed to load dashboard");
-            }
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // ==========================================
-    // CURRENT MONTH
-    // ==========================================
-
-    const currentMonth = new Date().toISOString().slice(0, 7);
-
-    // ==========================================
-    // ADMIN / HR CALCULATIONS
-    // ==========================================
-
-    const activeEmployees = useMemo(() => {
-        return employees.filter(
-            (employee) =>
-                String(employee.status || "").toUpperCase() === "ACTIVE"
-        ).length;
-    }, [employees]);
-
-    const currentMonthPayrolls = useMemo(() => {
-        return payrolls.filter(
-            (payroll) => payroll.payPeriod === currentMonth
+        setMyAttendance(
+          Array.isArray(attendanceResponse.data)
+            ? attendanceResponse.data
+            : []
         );
-    }, [payrolls, currentMonth]);
 
-    const totalGrossSalary = useMemo(() => {
-        return currentMonthPayrolls.reduce(
-            (total, payroll) =>
-                total + Number(payroll.grossSalary || 0),
-            0
+        setMyPayrolls(
+          Array.isArray(payrollResponse.data) ? payrollResponse.data : []
         );
-    }, [currentMonthPayrolls]);
 
-    const totalNetSalary = useMemo(() => {
-        return currentMonthPayrolls.reduce(
-            (total, payroll) =>
-                total + Number(payroll.netSalary || 0),
-            0
-        );
-    }, [currentMonthPayrolls]);
+        return;
+      }
 
-    const pendingPayrolls = useMemo(() => {
-        return currentMonthPayrolls.filter(
-            (payroll) =>
-                String(payroll.status || "").toUpperCase() === "GENERATED"
-        ).length;
-    }, [currentMonthPayrolls]);
+      const [employeesResponse, payrollResponse, attendanceResponse] =
+        await Promise.all([
+          axiosInstance.get("/employees"),
+          axiosInstance.get("/payrolls"),
+          axiosInstance.get("/attendance"),
+        ]);
 
-    const currentMonthAttendance = useMemo(() => {
-        return attendance.filter(
-            (item) => item.payPeriod === currentMonth
-        );
-    }, [attendance, currentMonth]);
+      setEmployees(
+        Array.isArray(employeesResponse.data) ? employeesResponse.data : []
+      );
 
-    const totalPresentDays = useMemo(() => {
-        return currentMonthAttendance.reduce(
-            (total, item) =>
-                total + Number(item.presentDays || 0),
-            0
-        );
-    }, [currentMonthAttendance]);
+      setPayrolls(
+        Array.isArray(payrollResponse.data) ? payrollResponse.data : []
+      );
 
-    const recentPayrolls = useMemo(() => {
-        return [...payrolls]
-            .sort((a, b) => {
-                const aDate = a.payDate
-                    ? new Date(a.payDate).getTime()
-                    : 0;
+      setAttendance(
+        Array.isArray(attendanceResponse.data) ? attendanceResponse.data : []
+      );
+    } catch (err) {
+      console.error("Failed to load dashboard data:", err);
 
-                const bDate = b.payDate
-                    ? new Date(b.payDate).getTime()
-                    : 0;
-
-                return bDate - aDate;
-            })
-            .slice(0, 5);
-    }, [payrolls]);
-
-    const departmentOverview = useMemo(() => {
-        const departmentMap = {};
-
-        employees.forEach((employee) => {
-            const departmentName =
-                employee.department?.departmentName ||
-                "No Department";
-
-            if (!departmentMap[departmentName]) {
-                departmentMap[departmentName] = {
-                    name: departmentName,
-                    employeeCount: 0,
-                    payrollAmount: 0,
-                };
-            }
-
-            departmentMap[departmentName].employeeCount += 1;
-        });
-
-        currentMonthPayrolls.forEach((payroll) => {
-            const departmentName =
-                payroll.employee?.department?.departmentName ||
-                "No Department";
-
-            if (!departmentMap[departmentName]) {
-                departmentMap[departmentName] = {
-                    name: departmentName,
-                    employeeCount: 0,
-                    payrollAmount: 0,
-                };
-            }
-
-            departmentMap[departmentName].payrollAmount += Number(
-                payroll.grossSalary || 0
-            );
-        });
-
-        return Object.values(departmentMap);
-    }, [employees, currentMonthPayrolls]);
-
-    // ==========================================
-    // EMPLOYEE CALCULATIONS
-    // ==========================================
-
-    const employeeFullName = [
-        myProfile?.firstName,
-        myProfile?.lastName,
-    ]
-        .filter(Boolean)
-        .join(" ");
-
-    const employeeDepartment =
-        myProfile?.department?.departmentName || "Not Assigned";
-
-    const latestPayroll =
-        myPayrolls.length > 0 ? myPayrolls[0] : null;
-
-    const totalEmployeePresentDays = myAttendance.reduce(
-        (total, item) =>
-            total + Number(item.presentDays || 0),
-        0
-    );
-
-    const totalEmployeeLeaveDays = myAttendance.reduce(
-        (total, item) =>
-            total + Number(item.leaveDays || 0),
-        0
-    );
-
-    const totalEmployeeUnpaidLeaveDays = myAttendance.reduce(
-        (total, item) =>
-            total + Number(item.unpaidLeaveDays || 0),
-        0
-    );
-
-    const totalEmployeeOvertimeHours = myAttendance.reduce(
-        (total, item) =>
-            total + Number(item.overtimeHours || 0),
-        0
-    );
-
-    // ==========================================
-    // LOADING SCREEN
-    // ==========================================
-
-    if (loading) {
-        return (
-            <div className="min-h-[calc(100vh-80px)] flex items-center justify-center bg-gray-50">
-                <div className="text-center">
-                    <div className="w-10 h-10 border-4 border-gray-200 border-t-green-600 rounded-full animate-spin mx-auto"></div>
-
-                    <p className="mt-4 text-gray-500">
-                        Loading dashboard...
-                    </p>
-                </div>
-            </div>
-        );
+      if (err.response?.status === 401) {
+        setError("Your session has expired. Please log in again.");
+      } else if (err.response?.status === 403) {
+        setError("You do not have permission to view this dashboard.");
+      } else {
+        setError("Unable to load dashboard data.");
+      }
+    } finally {
+      setLoading(false);
     }
+  };
 
-    // ==========================================
-    // ERROR SCREEN
-    // ==========================================
+  // =========================================================
+  // ADMIN / HR CALCULATIONS
+  // =========================================================
 
-    if (error) {
-        return (
-            <div className="min-h-[calc(100vh-80px)] flex items-center justify-center px-6 bg-gray-50">
-                <div className="max-w-md w-full bg-white rounded-2xl shadow-sm border border-red-100 p-8 text-center">
+  const activeEmployees = useMemo(
+    () =>
+      employees.filter(
+        (employee) =>
+          String(employee.status || "").toUpperCase() === "ACTIVE"
+      ).length,
+    [employees]
+  );
 
-                    <div className="w-14 h-14 mx-auto rounded-full bg-red-50 flex items-center justify-center text-red-600 text-2xl font-bold">
-                        !
-                    </div>
+  const currentMonthPayrolls = useMemo(
+    () =>
+      payrolls.filter(
+        (payroll) => String(payroll.payPeriod || "") === currentMonth
+      ),
+    [payrolls, currentMonth]
+  );
 
-                    <h2 className="text-xl font-semibold text-gray-900 mt-5">
-                        Unable to load dashboard
-                    </h2>
+  const totalGrossPayroll = useMemo(
+    () =>
+      currentMonthPayrolls.reduce(
+        (total, payroll) => total + Number(payroll.grossSalary || 0),
+        0
+      ),
+    [currentMonthPayrolls]
+  );
 
-                    <p className="text-gray-500 mt-2">
-                        {error}
-                    </p>
+  const totalNetPayroll = useMemo(
+    () =>
+      currentMonthPayrolls.reduce(
+        (total, payroll) => total + Number(payroll.netSalary || 0),
+        0
+      ),
+    [currentMonthPayrolls]
+  );
 
-                    <button
-                        onClick={fetchDashboardData}
-                        className="mt-6 px-5 py-2.5 rounded-xl bg-green-600 text-white font-medium hover:bg-green-700 transition"
-                    >
-                        Try Again
-                    </button>
-                </div>
-            </div>
-        );
+  const pendingPayrolls = useMemo(
+    () =>
+      currentMonthPayrolls.filter(
+        (payroll) =>
+          String(payroll.status || "").toUpperCase() === "GENERATED"
+      ).length,
+    [currentMonthPayrolls]
+  );
+
+  const currentMonthAttendance = useMemo(
+    () =>
+      attendance.filter(
+        (item) => String(item.payPeriod || "") === currentMonth
+      ),
+    [attendance, currentMonth]
+  );
+
+  const totalPresentDays = useMemo(
+    () =>
+      currentMonthAttendance.reduce(
+        (total, item) => total + Number(item.presentDays || 0),
+        0
+      ),
+    [currentMonthAttendance]
+  );
+
+  const recentPayrolls = useMemo(
+    () =>
+      [...payrolls]
+        .sort((a, b) => {
+          const aDate = a.payDate ? new Date(a.payDate).getTime() : 0;
+          const bDate = b.payDate ? new Date(b.payDate).getTime() : 0;
+          return bDate - aDate;
+        })
+        .slice(0, 6),
+    [payrolls]
+  );
+
+  // =========================================================
+  // EMPLOYEE CALCULATIONS
+  // =========================================================
+
+  const employeeFullName = [myProfile?.firstName, myProfile?.lastName]
+    .filter(Boolean)
+    .join(" ");
+
+  const employeeDepartment =
+    myProfile?.department?.departmentName || "Not assigned";
+
+  const latestPayroll =
+    myPayrolls.length > 0 ? myPayrolls[0] : null;
+
+  const latestAttendance =
+    myAttendance.length > 0 ? myAttendance[myAttendance.length - 1] : null;
+
+  const employeePresentDays = myAttendance.reduce(
+    (total, item) => total + Number(item.presentDays || 0),
+    0
+  );
+
+  const employeeLeaveDays = myAttendance.reduce(
+    (total, item) => total + Number(item.leaveDays || 0),
+    0
+  );
+
+  const employeeOvertimeHours = myAttendance.reduce(
+    (total, item) => total + Number(item.overtimeHours || 0),
+    0
+  );
+const totalDepartments = useMemo(() => {
+  const departmentKeys = new Set();
+
+  employees.forEach((employee) => {
+    const departmentId =
+      employee.department?.departmentId ?? employee.departmentId;
+
+    const departmentName =
+      employee.department?.departmentName ?? employee.departmentName;
+
+    if (departmentId != null) {
+      departmentKeys.add(`id-${departmentId}`);
+    } else if (departmentName) {
+      departmentKeys.add(`name-${String(departmentName).trim().toLowerCase()}`);
     }
+  });
 
-    // ==========================================================
-    // EMPLOYEE DASHBOARD
-    // ==========================================================
+  return departmentKeys.size;
+}, [employees]);
 
-    if (role === "EMPLOYEE") {
-        return (
-            <div className="min-h-full bg-[#F2F2F2] p-4 sm:p-6 lg:p-8">
+console.log(myProfile);
 
-                {/* ==========================================
-                    HEADER
-                ========================================== */}
 
-                <div className="mb-8">
-                    <p className="text-sm font-medium text-green-600">
-                        Employee Dashboard
-                    </p>
+  // =========================================================
+  // STATES
+  // =========================================================
 
-                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">
-                        Welcome, {employeeFullName || "Employee"}
-                    </h1>
-
-                    <p className="text-gray-500 mt-2">
-                        View your profile, attendance and payroll information.
-                    </p>
-                </div>
-
-                {/* ==========================================
-                    PROFILE CARD
-                ========================================== */}
-
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-6">
-
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-5">
-
-                        {/* Avatar */}
-
-                        <div className="w-16 h-16 rounded-2xl bg-green-100 flex items-center justify-center text-green-700 text-xl font-bold">
-                            {(
-                                myProfile?.firstName?.charAt(0) || "E"
-                            ).toUpperCase()}
-                        </div>
-
-                        {/* Employee Name */}
-
-                        <div className="flex-1">
-                            <h2 className="text-xl font-semibold text-gray-900">
-                                {employeeFullName || "Employee"}
-                            </h2>
-
-                            <p className="text-gray-500 mt-1">
-                                {myProfile?.designation || "Employee"}
-                            </p>
-
-                            <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-400">
-                                <span>
-                                    {myProfile?.employeeCode || "-"}
-                                </span>
-
-                                <span>•</span>
-
-                                <span>
-                                    {employeeDepartment}
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Status */}
-
-                        <span className="inline-flex self-start sm:self-center px-3 py-1.5 rounded-full bg-green-100 text-green-700 text-sm font-medium">
-                            {myProfile?.status || "ACTIVE"}
-                        </span>
-
-                    </div>
-
-                </div>
-
-                {/* ==========================================
-                    EMPLOYEE SUMMARY CARDS
-                ========================================== */}
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
-
-                    {/* Present Days */}
-
-                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-
-                        <p className="text-sm text-gray-500">
-                            Present Days
-                        </p>
-
-                        <p className="text-3xl font-bold text-gray-900 mt-2">
-                            {totalEmployeePresentDays}
-                        </p>
-
-                        <p className="text-sm text-green-600 mt-2">
-                            Attendance history
-                        </p>
-
-                    </div>
-
-                    {/* Leave Days */}
-
-                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-
-                        <p className="text-sm text-gray-500">
-                            Leave Days
-                        </p>
-
-                        <p className="text-3xl font-bold text-gray-900 mt-2">
-                            {totalEmployeeLeaveDays}
-                        </p>
-
-                        <p className="text-sm text-orange-600 mt-2">
-                            Total leave
-                        </p>
-
-                    </div>
-
-                    {/* Unpaid Leave */}
-
-                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-
-                        <p className="text-sm text-gray-500">
-                            Unpaid Leave
-                        </p>
-
-                        <p className="text-3xl font-bold text-gray-900 mt-2">
-                            {totalEmployeeUnpaidLeaveDays}
-                        </p>
-
-                        <p className="text-sm text-red-600 mt-2">
-                            Unpaid days
-                        </p>
-
-                    </div>
-
-                    {/* Overtime */}
-
-                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-
-                        <p className="text-sm text-gray-500">
-                            Overtime Hours
-                        </p>
-
-                        <p className="text-3xl font-bold text-gray-900 mt-2">
-                            {totalEmployeeOvertimeHours}
-                        </p>
-
-                        <p className="text-sm text-green-600 mt-2">
-                            Total overtime
-                        </p>
-
-                    </div>
-
-                </div>
-
-                {/* ==========================================
-                    PROFILE + LATEST PAYROLL
-                ========================================== */}
-
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
-
-                    {/* Personal Information */}
-
-                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-
-                        <h2 className="text-lg font-semibold text-gray-900">
-                            My Information
-                        </h2>
-
-                        <p className="text-sm text-gray-500 mt-1 mb-6">
-                            Your employee details
-                        </p>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-
-                            <div>
-                                <p className="text-xs text-gray-400 uppercase tracking-wide">
-                                    Full Name
-                                </p>
-
-                                <p className="text-sm font-medium text-gray-800 mt-1">
-                                    {employeeFullName || "-"}
-                                </p>
-                            </div>
-
-                            <div>
-                                <p className="text-xs text-gray-400 uppercase tracking-wide">
-                                    Employee Code
-                                </p>
-
-                                <p className="text-sm font-medium text-gray-800 mt-1">
-                                    {myProfile?.employeeCode || "-"}
-                                </p>
-                            </div>
-
-                            <div>
-                                <p className="text-xs text-gray-400 uppercase tracking-wide">
-                                    Email
-                                </p>
-
-                                <p className="text-sm font-medium text-gray-800 mt-1 break-all">
-                                    {myProfile?.email || "-"}
-                                </p>
-                            </div>
-
-                            <div>
-                                <p className="text-xs text-gray-400 uppercase tracking-wide">
-                                    Phone
-                                </p>
-
-                                <p className="text-sm font-medium text-gray-800 mt-1">
-                                    {myProfile?.phone || "-"}
-                                </p>
-                            </div>
-
-                            <div>
-                                <p className="text-xs text-gray-400 uppercase tracking-wide">
-                                    Department
-                                </p>
-
-                                <p className="text-sm font-medium text-gray-800 mt-1">
-                                    {employeeDepartment}
-                                </p>
-                            </div>
-
-                            <div>
-                                <p className="text-xs text-gray-400 uppercase tracking-wide">
-                                    Designation
-                                </p>
-
-                                <p className="text-sm font-medium text-gray-800 mt-1">
-                                    {myProfile?.designation || "-"}
-                                </p>
-                            </div>
-
-                            <div>
-                                <p className="text-xs text-gray-400 uppercase tracking-wide">
-                                    Joining Date
-                                </p>
-
-                                <p className="text-sm font-medium text-gray-800 mt-1">
-                                    {myProfile?.joiningDate || "-"}
-                                </p>
-                            </div>
-
-                            <div>
-                                <p className="text-xs text-gray-400 uppercase tracking-wide">
-                                    Location
-                                </p>
-
-                                <p className="text-sm font-medium text-gray-800 mt-1">
-                                    {myProfile?.location || "-"}
-                                </p>
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    {/* Latest Payroll */}
-
-                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-
-                        <div className="flex items-center justify-between mb-6">
-
-                            <div>
-                                <h2 className="text-lg font-semibold text-gray-900">
-                                    Latest Payroll
-                                </h2>
-
-                                <p className="text-sm text-gray-500 mt-1">
-                                    Your latest salary information
-                                </p>
-                            </div>
-
-                            {latestPayroll && (
-                                <span
-                                    className={`px-3 py-1.5 rounded-full text-xs font-medium ${
-                                        String(
-                                            latestPayroll.status || ""
-                                        ).toUpperCase() === "PAID"
-                                            ? "bg-green-100 text-green-700"
-                                            : String(
-                                                  latestPayroll.status || ""
-                                              ).toUpperCase() === "APPROVED"
-                                            ? "bg-green-100 text-green-700"
-                                            : "bg-orange-100 text-orange-700"
-                                    }`}
-                                >
-                                    {latestPayroll.status || "GENERATED"}
-                                </span>
-                            )}
-
-                        </div>
-
-                        {latestPayroll ? (
-
-                            <div>
-
-                                <div className="grid grid-cols-2 gap-5">
-
-                                    <div>
-                                        <p className="text-xs text-gray-400 uppercase tracking-wide">
-                                            Pay Period
-                                        </p>
-
-                                        <p className="font-semibold text-gray-900 mt-1">
-                                            {latestPayroll.payPeriod || "-"}
-                                        </p>
-                                    </div>
-
-                                    <div>
-                                        <p className="text-xs text-gray-400 uppercase tracking-wide">
-                                            Pay Date
-                                        </p>
-
-                                        <p className="font-semibold text-gray-900 mt-1">
-                                            {latestPayroll.payDate || "-"}
-                                        </p>
-                                    </div>
-
-                                    <div>
-                                        <p className="text-xs text-gray-400 uppercase tracking-wide">
-                                            Gross Salary
-                                        </p>
-
-                                        <p className="font-semibold text-gray-900 mt-1">
-                                            ₹
-                                            {Number(
-                                                latestPayroll.grossSalary || 0
-                                            ).toLocaleString("en-IN")}
-                                        </p>
-                                    </div>
-
-                                    <div>
-                                        <p className="text-xs text-gray-400 uppercase tracking-wide">
-                                            Total Deductions
-                                        </p>
-
-                                        <p className="font-semibold text-gray-900 mt-1">
-                                            ₹
-                                            {Number(
-                                                latestPayroll.totalDeductions || 0
-                                            ).toLocaleString("en-IN")}
-                                        </p>
-                                    </div>
-
-                                </div>
-
-                                <div className="mt-6 p-5 bg-green-50 rounded-xl">
-
-                                    <p className="text-sm text-green-700">
-                                        Net Salary
-                                    </p>
-
-                                    <p className="text-3xl font-bold text-green-700 mt-1">
-                                        ₹
-                                        {Number(
-                                            latestPayroll.netSalary || 0
-                                        ).toLocaleString("en-IN")}
-                                    </p>
-
-                                </div>
-
-                            </div>
-
-                        ) : (
-
-                            <div className="py-10 text-center">
-
-                                <p className="text-gray-500">
-                                    No payroll records available.
-                                </p>
-
-                            </div>
-
-                        )}
-
-                    </div>
-
-                </div>
-
-                {/* ==========================================
-                    ATTENDANCE HISTORY
-                ========================================== */}
-
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-6">
-
-                    <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-
-                        <div>
-                            <h2 className="text-lg font-semibold text-gray-900">
-                                My Attendance
-                            </h2>
-
-                            <p className="text-sm text-gray-500 mt-1">
-                                Your attendance history
-                            </p>
-                        </div>
-
-                        <button
-                            onClick={() => navigate("/my-attendance")}
-                            className="text-sm font-medium bg-[#1BBD36]/20 rounded-lg p-2 hover:bg-[#159A2C]/90 hover:text-white transition"
-                        >
-                            View Attendance
-                        </button>
-
-                    </div>
-
-                    {myAttendance.length === 0 ? (
-
-                        <div className="p-10 text-center">
-
-                            <p className="text-gray-500">
-                                No attendance records available.
-                            </p>
-
-                        </div>
-
-                    ) : (
-
-                        <div className="overflow-x-auto">
-
-                            <table className="w-full">
-
-                                <thead className="bg-gray-50">
-
-                                    <tr>
-
-                                        <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
-                                            Pay Period
-                                        </th>
-
-                                        <th className="text-center px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
-                                            Working Days
-                                        </th>
-
-                                        <th className="text-center px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
-                                            Present
-                                        </th>
-
-                                        <th className="text-center px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
-                                            Leave
-                                        </th>
-
-                                        <th className="text-center px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
-                                            Unpaid Leave
-                                        </th>
-
-                                        <th className="text-center px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
-                                            Overtime
-                                        </th>
-
-                                    </tr>
-
-                                </thead>
-
-                                <tbody className="divide-y divide-gray-100">
-
-                                    {myAttendance
-                                        .slice(0, 8)
-                                        .map((item) => (
-
-                                            <tr
-                                                key={
-                                                    item.attendanceId
-                                                }
-                                                className="hover:bg-gray-50 transition"
-                                            >
-
-                                                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                                                    {item.payPeriod || "-"}
-                                                </td>
-
-                                                <td className="px-6 py-4 text-sm text-center text-gray-700">
-                                                    {item.workingDays ?? "-"}
-                                                </td>
-
-                                                <td className="px-6 py-4 text-sm text-center font-medium text-green-600">
-                                                    {item.presentDays ?? 0}
-                                                </td>
-
-                                                <td className="px-6 py-4 text-sm text-center text-orange-600">
-                                                    {item.leaveDays ?? 0}
-                                                </td>
-
-                                                <td className="px-6 py-4 text-sm text-center text-red-600">
-                                                    {item.unpaidLeaveDays ?? 0}
-                                                </td>
-
-                                                <td className="px-6 py-4 text-sm text-center text-green-600">
-                                                    {item.overtimeHours ?? 0}
-                                                </td>
-
-                                            </tr>
-
-                                        ))}
-
-                                </tbody>
-
-                            </table>
-
-                        </div>
-
-                    )}
-
-                </div>
-
-                {/* ==========================================
-                    PAYSLIP / PAYROLL HISTORY
-                ========================================== */}
-
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-6">
-
-                    <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-
-                        <div>
-                            <h2 className="text-lg font-semibold text-gray-900">
-                                Payslip History
-                            </h2>
-
-                            <p className="text-sm text-gray-500 mt-1">
-                                Your previous payroll records
-                            </p>
-                        </div>
-
-                        <button
-                            onClick={() => navigate("/my-payroll")}
-                            className="text-sm font-medium bg-[#1BBD36]/20 rounded-lg p-2 hover:bg-[#159A2C]/90 hover:text-white transition"
-                        >
-                            View Payroll History
-                        </button>
-
-                    </div>
-
-                    {myPayrolls.length === 0 ? (
-
-                        <div className="p-10 text-center">
-
-                            <p className="text-gray-500">
-                                No payslip history available.
-                            </p>
-
-                        </div>
-
-                    ) : (
-
-                        <div className="overflow-x-auto">
-
-                            <table className="w-full">
-
-                                <thead className="bg-gray-50">
-
-                                    <tr>
-
-                                        <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
-                                            Pay Period
-                                        </th>
-
-                                        <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
-                                            Pay Date
-                                        </th>
-
-                                        <th className="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
-                                            Gross
-                                        </th>
-
-                                        <th className="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
-                                            Deductions
-                                        </th>
-
-                                        <th className="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
-                                            Net Salary
-                                        </th>
-
-                                        <th className="text-center px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
-                                            Status
-                                        </th>
-
-                                        <th className="text-center px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
-                                            Action
-                                        </th>
-
-                                    </tr>
-
-                                </thead>
-
-                                <tbody className="divide-y divide-gray-100">
-
-                                    {myPayrolls
-                                        .slice(0, 8)
-                                        .map((payroll) => {
-
-                                            const status =
-                                                String(
-                                                    payroll.status || ""
-                                                ).toUpperCase();
-
-                                            return (
-                                                <tr
-                                                    key={
-                                                        payroll.payrollId
-                                                    }
-                                                    className="hover:bg-gray-50 transition"
-                                                >
-
-                                                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                                                        {payroll.payPeriod || "-"}
-                                                    </td>
-
-                                                    <td className="px-6 py-4 text-sm text-gray-600">
-                                                        {payroll.payDate || "-"}
-                                                    </td>
-
-                                                    <td className="px-6 py-4 text-sm text-right text-gray-700">
-                                                        ₹
-                                                        {Number(
-                                                            payroll.grossSalary ||
-                                                                0
-                                                        ).toLocaleString(
-                                                            "en-IN"
-                                                        )}
-                                                    </td>
-
-                                                    <td className="px-6 py-4 text-sm text-right text-gray-700">
-                                                        ₹
-                                                        {Number(
-                                                            payroll.totalDeductions ||
-                                                                0
-                                                        ).toLocaleString(
-                                                            "en-IN"
-                                                        )}
-                                                    </td>
-
-                                                    <td className="px-6 py-4 text-sm text-right font-semibold text-green-600">
-                                                        ₹
-                                                        {Number(
-                                                            payroll.netSalary ||
-                                                                0
-                                                        ).toLocaleString(
-                                                            "en-IN"
-                                                        )}
-                                                    </td>
-
-                                                    <td className="px-6 py-4 text-center">
-
-                                                        <span
-                                                            className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
-                                                                status ===
-                                                                "PAID"
-                                                                    ? "bg-green-100 text-green-700"
-                                                                    : status ===
-                                                                      "APPROVED"
-                                                                    ? "bg-green-100 text-green-700"
-                                                                    : "bg-orange-100 text-orange-700"
-                                                            }`}
-                                                        >
-                                                            {payroll.status ||
-                                                                "GENERATED"}
-                                                        </span>
-
-                                                    </td>
-
-                                                    <td className="px-6 py-4 text-center">
-
-                                                        <button
-                                                            onClick={() =>
-                                                                navigate(
-                                                                    `/payslip/${payroll.payrollId}`
-                                                                )
-                                                            }
-                                                            className="text-sm font-medium text-green-600 hover:text-green-700"
-                                                        >
-                                                            View Payslip
-                                                        </button>
-
-                                                    </td>
-
-                                                </tr>
-                                            );
-                                        })}
-
-                                </tbody>
-
-                            </table>
-
-                        </div>
-
-                    )}
-
-                </div>
-
-                {/* ==========================================
-                    QUICK ACTIONS
-                ========================================== */}
-
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-
-                    <h2 className="text-lg font-semibold text-gray-900 mb-5">
-                        Quick Actions
-                    </h2>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-
-                        <button
-                            onClick={() => navigate("/")}
-                            className="p-4 text-left rounded-xl border border-gray-200 hover:border-green-300 hover:bg-green-50 transition"
-                        >
-                            <p className="font-semibold text-gray-900">
-                                My Profile
-                            </p>
-
-                            <p className="text-sm text-gray-500 mt-1">
-                                View your employee information
-                            </p>
-                        </button>
-
-                        <button
-                            onClick={() => navigate("/attendance")}
-                            className="p-4 text-left rounded-xl border border-gray-200 hover:border-green-300 hover:bg-green-50 transition"
-                        >
-                            <p className="font-semibold text-gray-900">
-                                My Attendance
-                            </p>
-
-                            <p className="text-sm text-gray-500 mt-1">
-                                View your attendance records
-                            </p>
-                        </button>
-
-                        <button
-                            onClick={() => navigate("/payroll/history")}
-                            className="p-4 text-left rounded-xl border border-gray-200 hover:border-green-300 hover:bg-green-50 transition"
-                        >
-                            <p className="font-semibold text-gray-900">
-                                Payslip History
-                            </p>
-
-                            <p className="text-sm text-gray-500 mt-1">
-                                View your previous salary records
-                            </p>
-                        </button>
-
-                    </div>
-
-                </div>
-
-            </div>
-        );
-    }
-
-    // ==========================================================
-    // ADMIN / HR DASHBOARD
-    // ==========================================================
-
+  if (loading) {
     return (
-        <div className="min-h-full bg-gray-50 p-4 sm:p-6 lg:p-8">
-
-            {/* ==========================================
-                DASHBOARD HEADER
-            ========================================== */}
-
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
-               
-                <div>
-
-                    <p className="text-sm font-medium text-[#1BBD36]">
-                        {role} Dashboard
-                    </p>
-
-                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">
-                        Dashboard
-                    </h1>
-
-                    <p className="text-gray-500 mt-2">
-                        Overview of your employee payroll system.
-                    </p>
-
-                </div>
-
-                <div className="flex flex-wrap gap-3">
-
-                    <button
-                        onClick={() => navigate("/employees")}
-                        className="px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition"
-                    >
-                        Employees
-                    </button>
-
-                    <button
-                        onClick={() => navigate("/payroll/generate")}
-                        className="px-4 py-2.5 bg-[#1BBD36] text-white rounded-xl font-medium hover:bg-[#159A2C] transition"
-                    >
-                        Generate Payroll
-                    </button>
-
-                </div>
-
-            </div>
-
-            {/* ==========================================
-                MAIN STATS
-            ========================================== */}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
-
-                {/* Total Employees */}
-
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-
-                    <p className="text-sm text-gray-500">
-                        Total Employees
-                    </p>
-
-                    <p className="text-3xl font-bold text-gray-900 mt-2">
-                        {employees.length}
-                    </p>
-
-                    <p className="text-sm text-green-600 mt-2">
-                        {activeEmployees} active
-                    </p>
-
-                </div>
-
-                {/* Gross Payroll */}
-
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-
-                    <p className="text-sm text-gray-500">
-                        Current Month Gross Payroll
-                    </p>
-
-                    <p className="text-3xl font-bold text-gray-900 mt-2">
-                        ₹{totalGrossSalary.toLocaleString("en-IN")}
-                    </p>
-
-                    <p className="text-sm text-gray-500 mt-2">
-                        {currentMonth}
-                    </p>
-
-                </div>
-
-                {/* Net Payroll */}
-
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-
-                    <p className="text-sm text-gray-500">
-                        Current Month Net Payroll
-                    </p>
-
-                    <p className="text-3xl font-bold text-gray-900 mt-2">
-                        ₹{totalNetSalary.toLocaleString("en-IN")}
-                    </p>
-
-                    <p className="text-sm text-gray-500 mt-2">
-                        After deductions
-                    </p>
-
-                </div>
-
-                {/* Pending Payroll */}
-
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-
-                    <p className="text-sm text-gray-500">
-                        Pending Payroll
-                    </p>
-
-                    <p className="text-3xl font-bold text-gray-900 mt-2">
-                        {pendingPayrolls}
-                    </p>
-
-                    <p className="text-sm text-orange-600 mt-2">
-                        Awaiting approval
-                    </p>
-
-                </div>
-
-            </div>
-
-            {/* ==========================================
-                ATTENDANCE SUMMARY
-            ========================================== */}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-6">
-
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-
-                    <p className="text-sm text-gray-500">
-                        Attendance Records
-                    </p>
-
-                    <p className="text-2xl font-bold text-gray-900 mt-2">
-                        {currentMonthAttendance.length}
-                    </p>
-
-                    <p className="text-sm text-gray-500 mt-2">
-                        Current month
-                    </p>
-
-                </div>
-
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-
-                    <p className="text-sm text-gray-500">
-                        Present Days
-                    </p>
-
-                    <p className="text-2xl font-bold text-gray-900 mt-2">
-                        {totalPresentDays}
-                    </p>
-
-                    <p className="text-sm text-green-600 mt-2">
-                        Current month
-                    </p>
-
-                </div>
-
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-
-                    <p className="text-sm text-gray-500">
-                        Payroll Records
-                    </p>
-
-                    <p className="text-2xl font-bold text-gray-900 mt-2">
-                        {currentMonthPayrolls.length}
-                    </p>
-
-                    <p className="text-sm text-gray-500 mt-2">
-                        Current month
-                    </p>
-
-                </div>
-
-            </div>
-
-            {/* ==========================================
-                DEPARTMENTS + RECENT PAYROLL
-            ========================================== */}
-
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-
-                {/* Department Overview */}
-
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-
-                    <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-
-                        <div>
-
-                            <h2 className="text-lg font-semibold text-gray-900">
-                                Department Overview
-                            </h2>
-
-                            <p className="text-sm text-gray-500 mt-1">
-                                Employee distribution
-                            </p>
-
-                        </div>
-
-                        <button
-                            onClick={() => navigate("/departments")}
-                            className="text-sm font-medium text-[#1BBD36] hover:text-[#159A2C]"
-                        >
-                            View All
-                        </button>
-
-                    </div>
-
-                    {departmentOverview.length === 0 ? (
-
-                        <div className="p-8 text-center text-gray-500">
-                            No department data available.
-                        </div>
-
-                    ) : (
-
-                        <div className="divide-y divide-gray-100">
-
-                            {departmentOverview.map((department) => (
-
-                                <div
-                                    key={department.name}
-                                    className="p-5 flex items-center justify-between"
-                                >
-
-                                    <div>
-
-                                        <p className="font-medium text-gray-900">
-                                            {department.name}
-                                        </p>
-
-                                        <p className="text-sm text-gray-500 mt-1">
-                                            {department.employeeCount} employees
-                                        </p>
-
-                                    </div>
-
-                                    <div className="text-right">
-
-                                        <p className="font-semibold text-gray-900">
-                                            ₹
-                                            {department.payrollAmount.toLocaleString(
-                                                "en-IN"
-                                            )}
-                                        </p>
-
-                                        <p className="text-xs text-gray-400 mt-1">
-                                            Gross payroll
-                                        </p>
-
-                                    </div>
-
-                                </div>
-
-                            ))}
-
-                        </div>
-
-                    )}
-
-                </div>
-
-                {/* Recent Payroll */}
-
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-
-                    <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-
-                        <div>
-
-                            <h2 className="text-lg font-semibold text-gray-900">
-                                Recent Payroll
-                            </h2>
-
-                            <p className="text-sm text-gray-500 mt-1">
-                                Latest payroll records
-                            </p>
-
-                        </div>
-
-                        <button
-                            onClick={() => navigate("/payroll/history")}
-                            className="text-sm font-medium text-[#1BBD36] hover:text-[#159A2C]"
-                        >
-                            View All
-                        </button>
-
-                    </div>
-
-                    {recentPayrolls.length === 0 ? (
-
-                        <div className="p-8 text-center text-gray-500">
-                            No payroll records available.
-                        </div>
-
-                    ) : (
-
-                        <div className="divide-y divide-gray-100">
-
-                            {recentPayrolls.map((payroll) => {
-
-                                const employeeName = [
-                                    payroll.employee?.firstName,
-                                    payroll.employee?.lastName,
-                                ]
-                                    .filter(Boolean)
-                                    .join(" ");
-
-                                const status = String(
-                                    payroll.status || ""
-                                ).toUpperCase();
-
-                                return (
-                                    <div
-                                        key={payroll.payrollId}
-                                        className="p-5 flex items-center justify-between gap-4"
-                                    >
-
-                                        <div className="min-w-0">
-
-                                            <p className="font-medium text-gray-900 truncate">
-                                                {employeeName ||
-                                                    payroll.employee
-                                                        ?.employeeCode ||
-                                                    "Employee"}
-                                            </p>
-
-                                            <p className="text-sm text-gray-500 mt-1">
-                                                {payroll.payPeriod || "-"}
-                                            </p>
-
-                                        </div>
-
-                                        <div className="text-right shrink-0">
-
-                                            <p className="font-semibold text-gray-900">
-                                                ₹
-                                                {Number(
-                                                    payroll.netSalary || 0
-                                                ).toLocaleString("en-IN")}
-                                            </p>
-
-                                            <span
-                                                className={`inline-flex mt-1 px-2.5 py-1 rounded-full text-xs font-medium ${
-                                                    status === "PAID"
-                                                        ? "bg-green-100 text-green-700"
-                                                        : status === "APPROVED"
-                                                        ? "bg-green-100 text-green-700"
-                                                        : "bg-orange-100 text-orange-700"
-                                                }`}
-                                            >
-                                                {payroll.status || "UNKNOWN"}
-                                            </span>
-
-                                        </div>
-
-                                    </div>
-                                );
-                            })}
-
-                        </div>
-
-                    )}
-
-                </div>
-
-            </div>
-
-            {/* ==========================================
-                QUICK ACTIONS
-            ========================================== */}
-
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mt-6">
-
-                <h2 className="text-lg font-semibold text-gray-900 mb-5">
-                    Quick Actions
-                </h2>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-
-                    <button
-                        onClick={() => navigate("/employees")}
-                        className="p-4 text-left rounded-xl border border-gray-200 hover:border-[#1BBD36]/30 hover:bg-[#1BBD36]/10 transition"
-                    >
-                        <p className="font-semibold text-gray-900">
-                            Employee Management
-                        </p>
-
-                        <p className="text-sm text-gray-500 mt-1">
-                            Add and manage employees
-                        </p>
-                    </button>
-
-                    <button
-                        onClick={() => navigate("/salary-structure")}
-                        className="p-4 text-left rounded-xl border border-gray-200 hover:border-[#1BBD36]/30 hover:bg-[#1BBD36]/10 transition"
-                    >
-                        <p className="font-semibold text-gray-900">
-                            Salary Structure
-                        </p>
-
-                        <p className="text-sm text-gray-500 mt-1">
-                            Manage employee salaries
-                        </p>
-                    </button>
-
-                    <button
-                        onClick={() => navigate("/attendance")}
-                        className="p-4 text-left rounded-xl border border-gray-200 hover:border-[#1BBD36]/30 hover:bg-[#1BBD36]/10 transition"
-                    >
-                        <p className="font-semibold text-gray-900">
-                            Attendance
-                        </p>
-
-                        <p className="text-sm text-gray-500 mt-1">
-                            Manage employee attendance
-                        </p>
-                    </button>
-
-                    <button
-                        onClick={() => navigate("/payroll/history")}
-                        className="p-4 text-left rounded-xl border border-gray-200 hover:border-[#1BBD36]/30 hover:bg-[#1BBD36]/10 transition"
-                    >
-                        <p className="font-semibold text-gray-900">
-                            Payroll History
-                        </p>
-
-                        <p className="text-sm text-gray-500 mt-1">
-                            View payroll records
-                        </p>
-                    </button>
-
-                </div>
-
-            </div>
-
+      <div className="flex min-h-[calc(100vh-72px)] scroll-smooth items-center justify-center bg-[#F7F8FA]">
+        <div className="text-center">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-indigo-600" />
+          <p className="mt-3 text-sm text-slate-500">Loading dashboard...</p>
         </div>
+      </div>
     );
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-[calc(100vh-72px)] scroll-smooth items-center justify-center bg-[#F7F8FA] p-6">
+        <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-7 text-center shadow-sm">
+          <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-red-50 text-red-600">
+            <CircleAlert size={20} />
+          </div>
+
+          <h2 className="mt-4 text-lg font-semibold text-slate-800">
+            Unable to load dashboard
+          </h2>
+
+          <p className="mt-2 text-sm text-slate-500">{error}</p>
+
+          <button
+            type="button"
+            onClick={fetchDashboardData}
+            className="mt-4 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // =========================================================
+  // EMPLOYEE DASHBOARD
+  // =========================================================
+
+  if (role === "EMPLOYEE") {
+    return (
+      <div className="flex h-full min-h-0 flex-col overflow-hidden px-3 py-2 sm:px-4">
+        <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col">
+          {/* HEADER */}
+          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 pb-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                Employee Dashboard
+              </p>
+              <h1 className="mt-0.5 truncate text-xl font-bold tracking-tight text-slate-900">
+                {employeeFullName || auth?.employeeName || "Employee"}
+              </h1>
+              <p className="mt-0.5 text-xs text-slate-500">
+                {myProfile?.departmentName} {myProfile?.designation ? `• ${myProfile.designation}` : ""}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => navigate("/my-payroll")}
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-indigo-700"
+            >
+              My Payroll
+              <ArrowUpRight size={14} />
+            </button>
+          </div>
+
+          {/* ESS SUMMARY */}
+          <div className="mt-3 grid shrink-0 grid-cols-2 gap-2 lg:grid-cols-4">
+            <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                  Present Days
+                </p>
+                <UserCheck size={15} className="text-indigo-500" />
+              </div>
+              <p className="mt-1.5 text-xl font-bold text-slate-900">
+                {employeePresentDays}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                  Leave Days
+                </p>
+                <CalendarDays size={15} className="text-amber-500" />
+              </div>
+              <p className="mt-1.5 text-xl font-bold text-slate-900">
+                {employeeLeaveDays}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                  Overtime
+                </p>
+                <Clock3 size={15} className="text-indigo-500" />
+              </div>
+              <p className="mt-1.5 text-xl font-bold text-slate-900">
+                {employeeOvertimeHours} hrs
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                  Latest Net Pay
+                </p>
+                <IndianRupee size={15} className="text-emerald-600" />
+              </div>
+              <p className="mt-1.5 text-xl font-bold text-slate-900">
+                {formatCurrency(latestPayroll?.netSalary)}
+              </p>
+              <p className="mt-0.5 text-[10px] text-slate-400">
+                {latestPayroll?.payPeriod ? formatMonth(latestPayroll.payPeriod) : "No payroll"}
+              </p>
+            </div>
+          </div>
+
+          {/* MAIN ROW */}
+          <div className="mt-3 grid shrink-0 grid-cols-1 gap-3 xl:grid-cols-3">
+            {/* LATEST PAYROLL */}
+            <section className="min-h-[250px] overflow-visible rounded-xl border border-slate-200 bg-white shadow-sm xl:col-span-2">
+              <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-4 py-2.5">
+                <div>
+                  <h2 className="text-sm font-semibold text-slate-800">Latest Payroll</h2>
+                  <p className="mt-0.5 text-[11px] text-slate-400">Most recent salary record</p>
+                </div>
+                {latestPayroll && <StatusBadge status={latestPayroll.status} />}
+              </div>
+
+              {latestPayroll ? (
+                <div className="p-4">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Pay Period</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-800">
+                        {formatMonth(latestPayroll.payPeriod)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Pay Date</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-800">
+                        {formatDate(latestPayroll.payDate)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Gross Pay</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-800">
+                        {formatCurrency(latestPayroll.grossSalary)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Deductions</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-800">
+                        {formatCurrency(latestPayroll.totalDeductions)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between rounded-lg bg-indigo-50 px-4 py-3">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-indigo-600">
+                        Net Salary
+                      </p>
+                      <p className="mt-0.5 text-2xl font-bold text-indigo-900">
+                        {formatCurrency(latestPayroll.netSalary)}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/payslip/${latestPayroll.payrollId}`)}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-700 hover:text-indigo-900"
+                    >
+                      View Payslip
+                      <ChevronRight size={14} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex h-full items-center justify-center p-8 text-sm text-slate-500">
+                  No payroll record available.
+                </div>
+              )}
+            </section>
+
+            {/* EMPLOYMENT / ATTENDANCE */}
+            <section className="min-h-[250px] overflow-visible rounded-xl border border-slate-200 bg-white shadow-sm">
+              <div className="border-b border-slate-100 px-4 py-2.5">
+                <h2 className="text-sm font-semibold text-slate-800">Employment Summary</h2>
+              </div>
+
+              <div className="space-y-3 p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-500">Employee Code</span>
+                  <span className="text-xs font-semibold text-slate-800">
+                    {myProfile?.employeeCode || auth?.employeeCode || "-"}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-500">Department</span>
+                  <span className="max-w-[58%] truncate text-right text-xs font-semibold text-slate-800">
+                    {myProfile?.departmentName}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-500">Joining Date</span>
+                  <span className="text-xs font-semibold text-slate-800">
+                    {formatDate(myProfile?.joiningDate)}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-500">Status</span>
+                  <span className="inline-flex rounded-full border border-emerald-100 bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700">
+                    {myProfile?.status || "ACTIVE"}
+                  </span>
+                </div>
+
+                <div className="border-t border-slate-100 pt-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-500">Latest Attendance</span>
+                    <button
+                      type="button"
+                      onClick={() => navigate("/my-attendance")}
+                      className="text-xs font-semibold text-indigo-600 hover:text-indigo-800"
+                    >
+                      View
+                    </button>
+                  </div>
+
+                  {latestAttendance ? (
+                    <div className="mt-2 grid grid-cols-3 gap-2 rounded-lg bg-slate-50 p-3">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wide text-slate-400">Present</p>
+                        <p className="mt-0.5 text-sm font-semibold text-emerald-700">
+                          {latestAttendance.presentDays ?? 0}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wide text-slate-400">Leave</p>
+                        <p className="mt-0.5 text-sm font-semibold text-amber-700">
+                          {latestAttendance.leaveDays ?? 0}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wide text-slate-400">OT</p>
+                        <p className="mt-0.5 text-sm font-semibold text-indigo-700">
+                          {latestAttendance.overtimeHours ?? 0}h
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-xs text-slate-400">No attendance records available.</p>
+                  )}
+                </div>
+              </div>
+            </section>
+          </div>
+
+          {/* RECENT PAYROLL */}
+          <section className="mt-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-800">Recent Payslips</h2>
+                <p className="mt-0.5 text-[11px] text-slate-400">Latest payroll records</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate("/my-payroll")}
+                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800"
+              >
+                View All
+              </button>
+            </div>
+
+            {myPayrolls.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[680px]">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-400">Pay Period</th>
+                      <th className="px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-400">Pay Date</th>
+                      <th className="px-4 py-2 text-right text-[10px] font-semibold uppercase tracking-wide text-slate-400">Gross</th>
+                      <th className="px-4 py-2 text-right text-[10px] font-semibold uppercase tracking-wide text-slate-400">Net</th>
+                      <th className="px-4 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-400">Status</th>
+                      <th className="px-4 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-400">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {myPayrolls.slice(0, 4).map((payroll) => (
+                      <tr key={payroll.payrollId} className="transition hover:bg-slate-50">
+                        <td className="px-4 py-2.5 text-xs font-medium text-slate-800">
+                          {formatMonth(payroll.payPeriod)}
+                        </td>
+                        <td className="px-4 py-2.5 text-xs text-slate-500">
+                          {formatDate(payroll.payDate)}
+                        </td>
+                        <td className="px-4 py-2.5 text-right text-xs text-slate-600">
+                          {formatCurrency(payroll.grossSalary)}
+                        </td>
+                        <td className="px-4 py-2.5 text-right text-xs font-semibold text-slate-800">
+                          {formatCurrency(payroll.netSalary)}
+                        </td>
+                        <td className="px-4 py-2.5 text-center">
+                          <StatusBadge status={payroll.status} />
+                        </td>
+                        <td className="px-4 py-2.5 text-center">
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/payslip/${payroll.payrollId}`)}
+                            className="text-xs font-semibold text-indigo-600 hover:text-indigo-800"
+                          >
+                            Payslip
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="p-6 text-center text-sm text-slate-500">No payslips available.</div>
+            )}
+          </section>
+        </div>
+      </div>
+    );
+  }
+
+
+  // =========================================================
+  // ADMIN / HR DASHBOARD
+  // =========================================================
+
+  return (
+    <div className="flex h-full min-h-0 flex-col overflow-hidden px-3 py-2 sm:px-4">
+      <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col">
+        {/* HEADER */}
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 pb-3">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              {role} Dashboard
+            </p>
+            <h1 className="mt-0.5 text-xl font-bold tracking-tight text-slate-900">
+              Payroll Overview
+            </h1>
+            <p className="mt-0.5 text-xs text-slate-500">
+              {formatMonth(currentMonth)}
+            </p>
+          </div>
+
+          <div className="flex shrink-0 gap-2">
+            <button
+              type="button"
+              onClick={() => navigate("/employees")}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-indigo-200 hover:text-indigo-700"
+            >
+              <Users size={14} />
+              Employees
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate("/payroll/generate")}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-indigo-700"
+            >
+              Run Payroll
+              <ArrowUpRight size={14} />
+            </button>
+          </div>
+        </div>
+
+        {/* KEY METRICS */}
+        <div className="mt-3 grid shrink-0 grid-cols-2 gap-2 xl:grid-cols-4">
+          <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Active Employees</p>
+              <Users size={15} className="text-indigo-500" />
+            </div>
+            <p className="mt-1.5 text-xl font-bold text-slate-900">{activeEmployees}</p>
+            <p className="text-[10px] text-slate-400">of {employees.length} total</p>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
+  <div className="flex items-center justify-between">
+    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+      Assigned Departments
+    </p>
+    <Building2 size={15} className="text-indigo-500" />
+  </div>
+
+  <p className="mt-1.5 text-xl font-bold text-slate-900">
+     {totalDepartments}
+  </p>
+
+  <p className="text-[10px] text-slate-400">
+     Departments with Active Employees
+  </p>
+</div>
+
+          <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Gross Payroll</p>
+              <IndianRupee size={15} className="text-slate-500" />
+            </div>
+            <p className="mt-1.5 text-xl font-bold text-slate-900">{formatCurrency(totalGrossPayroll)}</p>
+            <p className="text-[10px] text-slate-400">Before deductions</p>
+          </div>
+
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-700">Pending Approval</p>
+              <Clock3 size={15} className="text-amber-600" />
+            </div>
+            <p className="mt-1.5 text-xl font-bold text-amber-900">{pendingPayrolls}</p>
+            <p className="text-[10px] text-amber-700">Generated payroll records</p>
+          </div>
+        </div>
+
+        {/* OPERATIONAL SUMMARY */}
+        <div className="mt-3 grid shrink-0 grid-cols-1 gap-3 xl:grid-cols-3">
+          <section className="min-h-[220px] overflow-visible rounded-xl border border-slate-200 bg-white shadow-sm xl:col-span-2">
+            <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-4 py-2.5">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-800">Payroll Status</h2>
+                <p className="mt-0.5 text-[11px] text-slate-400">Current month processing status</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate("/payroll/history")}
+                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800"
+              >
+                View History
+              </button>
+            </div>
+
+            <div className="p-4">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <div className="rounded-lg bg-slate-50 px-3 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Records</p>
+                  <p className="mt-1 text-lg font-bold text-slate-900">{currentMonthPayrolls.length}</p>
+                </div>
+
+                <div className="rounded-lg bg-slate-50 px-3 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Net Pay</p>
+                  <p className="mt-1 text-lg font-bold text-slate-900">{formatCurrency(totalNetPayroll)}</p>
+                </div>
+
+                <div className="rounded-lg bg-slate-50 px-3 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Gross Pay</p>
+                  <p className="mt-1 text-lg font-bold text-slate-900">{formatCurrency(totalGrossPayroll)}</p>
+                </div>
+              </div>
+
+              <div className={`mt-3 flex items-center justify-between rounded-lg border px-3 py-2.5 ${
+                pendingPayrolls > 0
+                  ? "border-amber-100 bg-amber-50"
+                  : "border-emerald-100 bg-emerald-50"
+              }`}>
+                <div className="flex min-w-0 items-center gap-2">
+                  {pendingPayrolls > 0 ? (
+                    <CircleAlert size={16} className="shrink-0 text-amber-600" />
+                  ) : (
+                    <CircleCheck size={16} className="shrink-0 text-emerald-600" />
+                  )}
+
+                  <p className="truncate text-xs font-semibold text-slate-800">
+                    {pendingPayrolls > 0
+                      ? `${pendingPayrolls} payroll record${pendingPayrolls === 1 ? "" : "s"} awaiting approval`
+                      : "No payroll records awaiting approval"}
+                  </p>
+                </div>
+
+                {pendingPayrolls > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => navigate("/payroll/history")}
+                    className="shrink-0 text-xs font-semibold text-indigo-700 hover:text-indigo-900"
+                  >
+                    Review
+                  </button>
+                )}
+              </div>
+            </div>
+          </section>
+
+          <section className="min-h-[220px] overflow-visible rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-800">Attendance</h2>
+                <p className="mt-0.5 text-[11px] text-slate-400">Current month</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate("/attendance")}
+                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800"
+              >
+                View
+              </button>
+            </div>
+
+            <div className="space-y-4 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-500">Attendance records</span>
+                <span className="text-sm font-semibold text-slate-800">{currentMonthAttendance.length}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-500">Present days</span>
+                <span className="text-sm font-semibold text-emerald-700">{totalPresentDays}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-500">Active employees</span>
+                <span className="text-sm font-semibold text-slate-800">{activeEmployees}</span>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        {/* RECENT PAYROLL */}
+        <section className="mt-3 min-h-0 flex-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-800">Recent Payroll</h2>
+              <p className="mt-0.5 text-[11px] text-slate-400">Latest processed records</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate("/payroll/history")}
+              className="text-xs font-semibold text-indigo-600 hover:text-indigo-800"
+            >
+              View All
+            </button>
+          </div>
+
+          {recentPayrolls.length > 0 ? (
+            <div className="min-h-0 flex-1 overflow-auto">
+              <table className="w-full min-w-[700px]">
+                <thead className="sticky top-0 z-10 bg-slate-50">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-400">Employee</th>
+                    <th className="px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-400">Period</th>
+                    <th className="px-4 py-2 text-right text-[10px] font-semibold uppercase tracking-wide text-slate-400">Net Pay</th>
+                    <th className="px-4 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-400">Status</th>
+                    <th className="px-4 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-400">Pay Date</th>
+                  </tr>
+                </thead>
+
+                <tbody className="divide-y divide-slate-100">
+                  {recentPayrolls.map((payroll) => (
+                    <tr key={payroll.payrollId} className="transition hover:bg-slate-50">
+                      <td className="px-4 py-2.5">
+                        <p className="text-xs font-semibold text-slate-800">
+                          {getEmployeeName(payroll.employee)}
+                        </p>
+                        <p className="mt-0.5 text-[10px] text-slate-400">
+                          {payroll.employee?.employeeCode || "-"}
+                        </p>
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-slate-600">
+                        {formatMonth(payroll.payPeriod)}
+                      </td>
+                      <td className="px-4 py-2.5 text-right text-xs font-semibold text-slate-800">
+                        {formatCurrency(payroll.netSalary)}
+                      </td>
+                      <td className="px-4 py-2.5 text-center">
+                        <StatusBadge status={payroll.status} />
+                      </td>
+                      <td className="px-4 py-2.5 text-center text-xs text-slate-500">
+                        {formatDate(payroll.payDate)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="p-6 text-center text-sm text-slate-500">No payroll records available.</div>
+          )}
+        </section>
+      </div>
+    </div>
+  );
 };
 
 export default Dashboard;

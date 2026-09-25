@@ -1,184 +1,265 @@
 package com.example.demo.service;
 
+import com.example.demo.dto.attendance.AttendanceRequest;
 import com.example.demo.entity.Attendance;
 import com.example.demo.entity.Employee;
 import com.example.demo.repository.AttendanceRepository;
-import com.example.demo.repository.SalaryStructureRepository;
 import com.example.demo.repository.EmployeeRepository;
-import com.example.demo.dto.AttendanceRequest;
+import com.example.demo.repository.SalaryStructureRepository;
+import com.example.demo.util.WorkingDaysCalculator;
+
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
-import java.time.YearMonth;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.YearMonth;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class AttendanceService {
 
     private final AttendanceRepository attendanceRepository;
     private final EmployeeRepository employeeRepository;
     private final SalaryStructureRepository salaryStructureRepository;
 
-    public AttendanceService(
-            AttendanceRepository attendanceRepository,
-            EmployeeRepository employeeRepository,
-          SalaryStructureRepository salaryStructureRepository) {
 
-        this.attendanceRepository = attendanceRepository;
-        this.employeeRepository = employeeRepository;
-        this.salaryStructureRepository = salaryStructureRepository;
-    }
+    // GET ALL ATTENDANCE
 
+    @Transactional(readOnly = true)
     public List<Attendance> getAllAttendance() {
+
         return attendanceRepository.findAll();
     }
 
+
+    // GET ATTENDANCE BY ID
+
+    @Transactional(readOnly = true)
     public Attendance getAttendanceById(Long id) {
 
         return attendanceRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Attendance not found"));
+                        new RuntimeException("Attendance not found")
+                );
     }
 
-public Attendance createAttendance(AttendanceRequest request) {
 
-    // Find employee
-    Employee employee = employeeRepository
-            .findById(request.getEmployeeId())
-            .orElseThrow(() ->
-                    new RuntimeException("Employee not found"));
+    // CREATE ATTENDANCE
 
-    // Create Attendance entity
-    Attendance attendance = new Attendance();
+    @Transactional
+    public Attendance createAttendance(
+            AttendanceRequest request
+    ) {
 
-    attendance.setEmployee(employee);
-    attendance.setPayPeriod(request.getPayPeriod());
-    attendance.setWorkingDays(request.getWorkingDays());
-    attendance.setPresentDays(request.getPresentDays());
-    attendance.setLeaveDays(request.getLeaveDays());
-    attendance.setUnpaidLeaveDays(request.getUnpaidLeaveDays());
+        // Validate pay period first
+        validatePayPeriod(request.getPayPeriod());
 
-    // If overtime is not provided, store ZERO
-    attendance.setOvertimeHours(
-            request.getOvertimeHours() == null
-                    ? BigDecimal.ZERO
-                    : request.getOvertimeHours()
-    );
+        // Calculate working days automatically
+        int workingDays =
+                WorkingDaysCalculator.calculate(
+                        request.getPayPeriod()
+                );
 
-    // Validate pay period
-    validatePayPeriod(attendance.getPayPeriod());
+        // Find employee
+        Employee employee =
+                employeeRepository.findById(
+                        request.getEmployeeId()
+                ).orElseThrow(() ->
+                        new RuntimeException("Employee not found")
+                );
 
-    // Business validation
-    if (attendance.getWorkingDays() == null ||
-            attendance.getWorkingDays() <= 0) {
+        // Create attendance
+        Attendance attendance = new Attendance();
 
-        throw new RuntimeException(
-                "Working days must be greater than 0"
+        attendance.setEmployee(employee);
+        attendance.setPayPeriod(request.getPayPeriod());
+        attendance.setWorkingDays(workingDays);
+
+        attendance.setPresentDays(
+                request.getPresentDays()
         );
-    }
 
-    if (attendance.getPresentDays() == null ||
-            attendance.getPresentDays() < 0) {
-
-        throw new RuntimeException(
-                "Present days cannot be negative"
+        attendance.setLeaveDays(
+                request.getLeaveDays()
         );
-    }
 
-    if (attendance.getLeaveDays() == null ||
-            attendance.getLeaveDays() < 0) {
-
-        throw new RuntimeException(
-                "Leave days cannot be negative"
+        attendance.setUnpaidLeaveDays(
+                request.getUnpaidLeaveDays()
         );
-    }
 
-    if (attendance.getUnpaidLeaveDays() == null ||
-            attendance.getUnpaidLeaveDays() < 0) {
-
-        throw new RuntimeException(
-                "Unpaid leave days cannot be negative"
+        attendance.setOvertimeHours(
+                request.getOvertimeHours() == null
+                        ? BigDecimal.ZERO
+                        : request.getOvertimeHours()
         );
+
+
+        // Validate attendance values
+
+        if (attendance.getWorkingDays() == null ||
+                attendance.getWorkingDays() <= 0) {
+
+            throw new RuntimeException(
+                    "Working days must be greater than 0"
+            );
+        }
+
+        if (attendance.getPresentDays() == null ||
+                attendance.getPresentDays() < 0) {
+
+            throw new RuntimeException(
+                    "Present days cannot be negative"
+            );
+        }
+
+        if (attendance.getLeaveDays() == null ||
+                attendance.getLeaveDays() < 0) {
+
+            throw new RuntimeException(
+                    "Leave days cannot be negative"
+            );
+        }
+
+        if (attendance.getUnpaidLeaveDays() == null ||
+                attendance.getUnpaidLeaveDays() < 0) {
+
+            throw new RuntimeException(
+                    "Unpaid leave days cannot be negative"
+            );
+        }
+
+        if (attendance.getOvertimeHours()
+                .compareTo(BigDecimal.ZERO) < 0) {
+
+            throw new RuntimeException(
+                    "Overtime hours cannot be negative"
+            );
+        }
+
+
+        // Present + Leave cannot exceed working days
+
+        if (attendance.getPresentDays()
+                + attendance.getLeaveDays()
+                > attendance.getWorkingDays()) {
+
+            throw new RuntimeException(
+                    "Present days and leave days cannot exceed working days"
+            );
+        }
+
+
+        return attendanceRepository.save(attendance);
     }
 
-    if (attendance.getOvertimeHours()
-            .compareTo(BigDecimal.ZERO) < 0) {
 
-        throw new RuntimeException(
-                "Overtime hours cannot be negative"
-        );
+    // CALCULATE OVERTIME AMOUNT
+
+    @Transactional(readOnly = true)
+    public BigDecimal calculateOvertimeAmount(
+            Long employeeId,
+            String payPeriod
+    ) {
+
+        Attendance attendance =
+                attendanceRepository
+                        .findByEmployee_EmployeeIdAndPayPeriod(
+                                employeeId,
+                                payPeriod
+                        )
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Attendance not found"
+                                )
+                        );
+
+        BigDecimal basicSalary =
+                salaryStructureRepository
+                        .findByEmployee_EmployeeId(employeeId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Salary structure not found"
+                                )
+                        )
+                        .getBasicSalary();
+
+
+        BigDecimal overtimeHours =
+                attendance.getOvertimeHours() == null
+                        ? BigDecimal.ZERO
+                        : attendance.getOvertimeHours();
+
+
+        // Daily basic salary = Basic / 26
+        BigDecimal dailyBasicRate =
+                basicSalary.divide(
+                        BigDecimal.valueOf(26),
+                        2,
+                        RoundingMode.HALF_UP
+                );
+
+
+        // Hourly basic salary = Daily / 8
+        BigDecimal hourlyBasicRate =
+                dailyBasicRate.divide(
+                        BigDecimal.valueOf(8),
+                        2,
+                        RoundingMode.HALF_UP
+                );
+
+
+        // Overtime = 1.5 × hourly basic salary
+        BigDecimal overtimeRate =
+                hourlyBasicRate.multiply(
+                        BigDecimal.valueOf(1.5)
+                );
+
+
+        return overtimeHours.multiply(overtimeRate);
     }
 
-    if (attendance.getPresentDays()
-            + attendance.getLeaveDays()
-            > attendance.getWorkingDays()) {
 
-        throw new RuntimeException(
-                "Present days and leave days cannot exceed working days"
-        );
+    // GET EMPLOYEE ATTENDANCE
+
+    @Transactional(readOnly = true)
+    public List<Attendance> getAttendanceByEmployee(
+            Long employeeId
+    ) {
+
+        return attendanceRepository
+                .findByEmployee_EmployeeIdOrderByPayPeriodDesc(
+                        employeeId
+                );
     }
 
-    return attendanceRepository.save(attendance);
-}
 
+    // VALIDATE PAY PERIOD
 
-    public BigDecimal calculateOvertimeAmount(Long employeeId, String payPeriod) {
+    private void validatePayPeriod(String payPeriod) {
 
-    Employee employee = employeeRepository
-            .findById(employeeId)
-            .orElseThrow(() ->
-                    new RuntimeException("Employee not found"));
+        if (payPeriod == null ||
+                !payPeriod.matches("\\d{4}-(0[1-9]|1[0-2])")) {
 
-    Attendance attendance = attendanceRepository
-            .findByEmployee_EmployeeIdAndPayPeriod(
-                    employeeId,
-                    payPeriod
-            )
-            .orElseThrow(() ->
-                    new RuntimeException("Attendance not found"));
+            throw new RuntimeException(
+                    "Attendance Month must be in YYYY-MM format"
+            );
+        }
 
-    BigDecimal basicSalary = salaryStructureRepository
-            .findByEmployee_EmployeeId(employeeId)
-            .orElseThrow(() ->
-                    new RuntimeException("Salary structure not found"))
-            .getBasicSalary();
+        YearMonth attendanceMonth =
+                YearMonth.parse(payPeriod);
 
-    BigDecimal overtimeHours =
-            attendance.getOvertimeHours() == null
-                    ? BigDecimal.ZERO
-                    : attendance.getOvertimeHours();
+        YearMonth currentMonth =
+                YearMonth.now();
 
-    BigDecimal hourlyBasicRate =
-            basicSalary
-                    .divide(BigDecimal.valueOf(26), 2, java.math.RoundingMode.HALF_UP)
-                    .divide(BigDecimal.valueOf(8), 2, java.math.RoundingMode.HALF_UP);
+        if (attendanceMonth.isAfter(currentMonth)) {
 
-    BigDecimal overtimeRate =
-            hourlyBasicRate.multiply(BigDecimal.valueOf(1.5));
-
-    return overtimeHours.multiply(overtimeRate);
-}
-private void validatePayPeriod(String payPeriod) {
-
-    if (payPeriod == null ||
-            !payPeriod.matches("\\d{4}-(0[1-9]|1[0-2])")) {
-
-        throw new RuntimeException(
-                "Attendance Month must be in YYYY-MM format"
-        );
+            throw new RuntimeException(
+                    "Attendance Month cannot be in the future"
+            );
+        }
     }
-
-    YearMonth attendanceMonth = YearMonth.parse(payPeriod);
-    YearMonth currentMonth = YearMonth.now();
-
-    if (attendanceMonth.isAfter(currentMonth)) {
-        throw new RuntimeException(
-                "Attendance Month cannot be in the future"
-        );
-    }
-}
-public List<Attendance> getAttendanceByEmployee(Long employeeId) {
-
-    return attendanceRepository
-            .findByEmployee_EmployeeIdOrderByPayPeriodDesc(employeeId);
-}
 }
