@@ -10,6 +10,7 @@ import {
   Search,
   SlidersHorizontal,
   Users,
+  X,
 } from "lucide-react";
 
 const API_URL = "http://localhost:8080";
@@ -22,7 +23,6 @@ const getCurrentMonth = () => {
 };
 
 const currentMonth = getCurrentMonth();
-const MAX_OVERTIME_HOURS = 48;
 
 const getSaturdays = (payPeriod) => {
   if (!payPeriod) return [];
@@ -87,7 +87,7 @@ const emptyForm = {
   holidayDates: [],
   workingDays: calculateWorkingDays(currentMonth),
   presentDays: "",
-  leaveDays: "",
+  leaveDays: "0",
   unpaidLeaveDays: "0",
   overtimeHours: "0",
 };
@@ -375,11 +375,7 @@ const AttendanceManagement = () => {
 
     if (!Number.isFinite(overtimeHours) || overtimeHours < 0) {
       errors.overtimeHours = ["Overtime hours cannot be negative"];
-    } else if (overtimeHours > MAX_OVERTIME_HOURS) {
-      errors.overtimeHours = [
-        `Overtime cannot exceed ${MAX_OVERTIME_HOURS} hours`,
-      ];
-    }
+    } 
 
     if (workingDays === "" || Number(workingDays) <= 0) {
       setFormError("Unable to calculate working days for the selected month.");
@@ -401,8 +397,7 @@ const AttendanceManagement = () => {
     const attendanceData = {
       employeeId: Number(formData.employeeId),
       payPeriod: formData.payPeriod,
-      workingDays,
-      holidayDates: formData.holidayDates,
+      holidayDates: [...formData.holidayDates].sort(),
       presentDays,
       leaveDays,
       unpaidLeaveDays,
@@ -943,8 +938,6 @@ const AttendanceManagement = () => {
       >
         <option value="newest">Newest Month</option>
         <option value="oldest">Oldest Month</option>
-        <option value="employeeAsc">Employee Code A-Z</option>
-        <option value="employeeDesc">Employee Code Z-A</option>
         <option value="attendanceHigh">Highest Attendance</option>
         <option value="attendanceLow">Lowest Attendance</option>
         <option value="overtimeHigh">Highest Overtime</option>
@@ -1472,8 +1465,6 @@ const AttendanceManagement = () => {
                   <input
                     type="number"
                     min="0"
-                    max={MAX_OVERTIME_HOURS}
-                    step="0.5"
                     name="overtimeHours"
                     value={formData.overtimeHours}
                     onChange={handleChange}

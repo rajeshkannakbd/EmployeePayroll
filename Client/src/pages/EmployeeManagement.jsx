@@ -343,7 +343,7 @@ const EmployeeManagement = () => {
 
       const matchesDepartment =
         !departmentFilter ||
-        String(employee.department?.departmentId || "") ===
+        String(employee.departmentId || "") ===
           String(departmentFilter);
 
       const matchesStatus =
@@ -549,8 +549,8 @@ const EmployeeManagement = () => {
       designation: employee.designation || "",
       joiningDate: employee.joiningDate || "",
       status: employee.status || "ACTIVE",
-      departmentId: employee.department?.departmentId
-        ? String(employee.department.departmentId)
+      departmentId: employee.departmentId
+        ? String(employee.departmentId)
         : "",
       panNumber: employee.panNumber || "",
       uanNumber: employee.uanNumber || "",
@@ -916,8 +916,6 @@ const EmployeeManagement = () => {
         onChange={(event) => setSortBy(event.target.value)}
         className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
       >
-        <option value="codeAsc">Employee Code A-Z</option>
-        <option value="codeDesc">Employee Code Z-A</option>
         <option value="nameAsc">Employee Name A-Z</option>
         <option value="nameDesc">Employee Name Z-A</option>
         <option value="joiningNewest">Newest Joining Date</option>
@@ -1073,6 +1071,25 @@ const EmployeeManagement = () => {
           {/* PAGINATION */}
           {sortedEmployees.length > 0 && (
             <div className="flex shrink-0 flex-col gap-2 border-t border-slate-100 bg-white px-4 py-2.5 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-center justify-center gap-2 lg:justify-end">
+              <div className="flex items-center justify-center gap-2 lg:justify-end">
+                <label
+                  htmlFor="employee-page-size"
+                  className="flex items-center gap-2 text-xs text-gray-500"
+                >
+                  Rows per page
+                </label>
+                <select
+                  id="employee-page-size"
+                  value={pageSize}
+                  onChange={(event) => setPageSize(Number(event.target.value))}
+                  className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
               <div className="text-xs text-slate-500">
                 Showing {" "}
                 <span className="font-semibold text-slate-800">
@@ -1082,6 +1099,7 @@ const EmployeeManagement = () => {
                 <span className="font-semibold text-slate-800">
                   {sortedEmployees.length}
                 </span>
+              </div>
               </div>
 
               <div className="flex items-center justify-center gap-1">
@@ -1124,25 +1142,7 @@ const EmployeeManagement = () => {
                 </button>
               </div>
 
-              <div className="flex items-center justify-center gap-2 lg:justify-end">
-                <label
-                  htmlFor="employee-page-size"
-                  className="text-xs font-medium text-slate-500"
-                >
-                  Rows
-                </label>
-                <select
-                  id="employee-page-size"
-                  value={pageSize}
-                  onChange={(event) => setPageSize(Number(event.target.value))}
-                  className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                >
-                  <option value={10}>10</option>
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                </select>
-                <span className="text-xs text-slate-400">per page</span>
-              </div>
+              
             </div>
           )}
         </div>
@@ -1274,6 +1274,20 @@ const EmployeeManagement = () => {
                     { value: "INTERN", label: "Intern" },
                   ]}
                 />
+
+                {isEditing && (
+                  <SelectField
+                    name="status"
+                    label="Status"
+                    value={formData.status}
+                    onChange={handleChange}
+                    errors={fieldErrors}
+                    options={[
+                      { value: "ACTIVE", label: "Active" },
+                      { value: "INACTIVE", label: "Inactive" },
+                    ]}
+                  />
+                )}
 
                 <TextField
                   name="location"

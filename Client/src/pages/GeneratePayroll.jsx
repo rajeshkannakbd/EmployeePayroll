@@ -299,6 +299,7 @@ function GeneratePayroll() {
   };
 
   const bonusAmount = Number(form.bonus || 0);
+  
 
   // ---------------------------------------------------------
   // RENDER

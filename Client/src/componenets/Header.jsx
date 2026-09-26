@@ -223,7 +223,7 @@ const Header = () => {
                   <ProfileSection title="Employment Information">
                     <ProfileItem
                       label="Department"
-                      value={employee.department?.departmentName}
+                      value={employee.departmentName}
                     />
                     <ProfileItem
                       label="Designation"

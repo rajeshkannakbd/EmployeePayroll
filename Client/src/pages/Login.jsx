@@ -138,7 +138,7 @@ if (
             LEFT PANEL
         ================================================= */}
 
-        <div className="hidden bg-slate-900 lg:flex lg:flex-col lg:justify-between lg:p-12">
+        <div className="hidden bg-[#0B1F3A] lg:flex lg:flex-col lg:justify-between lg:p-12">
 
           <div>
 
@@ -164,7 +164,7 @@ if (
 
             <div className="mt-20 max-w-md">
 
-              <p className="text-sm font-medium text-green-400">
+              <p className="text-sm font-medium text-indigo-400">
                 EMPLOYEE PAYROLL MANAGEMENT
               </p>
 
@@ -327,7 +327,7 @@ if (
                         )
                       }
                       disabled={loading}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-green-600 hover:text-green-800"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-indigo-600 hover:text-indigo-800"
                     >
                       {showPassword
                         ? "Hide"
@@ -343,7 +343,7 @@ if (
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full rounded-xl bg-green-700 px-5 py-3 font-semibold text-white transition hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-300 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="w-full rounded-xl bg-indigo-700 px-5 py-3 font-semibold text-white transition hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {loading
                     ? "Signing in..."

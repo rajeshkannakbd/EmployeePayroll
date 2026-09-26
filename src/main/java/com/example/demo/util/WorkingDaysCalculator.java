@@ -1,16 +1,28 @@
 package com.example.demo.util;
 
 import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public final class WorkingDaysCalculator {
 
     private WorkingDaysCalculator() {
     }
 
-    public static int calculate(String payPeriod) {
+    public static int calculate(
+            String payPeriod,
+            List<String> holidayDates
+    ) {
 
         YearMonth yearMonth = YearMonth.parse(payPeriod);
+
+        Set<String> holidays =
+                holidayDates == null
+                        ? Set.of()
+                        : new HashSet<>(holidayDates);
 
         int workingDays = 0;
 
@@ -18,10 +30,15 @@ public final class WorkingDaysCalculator {
              day <= yearMonth.lengthOfMonth();
              day++) {
 
-            DayOfWeek dayOfWeek =
-                    yearMonth.atDay(day).getDayOfWeek();
+            LocalDate date =
+                    yearMonth.atDay(day);
 
-            if (dayOfWeek != DayOfWeek.SUNDAY) {
+            String dateStr =
+                    date.toString();
+
+            if (date.getDayOfWeek() != DayOfWeek.SUNDAY
+                    && !holidays.contains(dateStr)) {
+
                 workingDays++;
             }
         }

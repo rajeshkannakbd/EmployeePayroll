@@ -13,7 +13,6 @@ import com.example.demo.repository.EmployeeRepository;
 import com.example.demo.repository.PayrollRepository;
 import com.example.demo.repository.SalaryStructureRepository;
 import com.example.demo.util.NumberToWords;
-
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Sort;
@@ -30,8 +29,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PayrollService {
 
-    private static final BigDecimal DAYS_IN_MONTH =
-            BigDecimal.valueOf(26);
 
     private static final BigDecimal HOURS_PER_DAY =
             BigDecimal.valueOf(8);
@@ -119,7 +116,7 @@ public class PayrollService {
                                         "Attendance not found for employee and pay period"
                                 )
                         );
-
+        int workingDays = attendance.getWorkingDays();
 
         // 4. Prevent duplicate payroll
         payrollRepository
@@ -152,11 +149,11 @@ public class PayrollService {
 
         // Daily basic salary
         BigDecimal dailyBasicRate =
-                basicSalary.divide(
-                        DAYS_IN_MONTH,
-                        2,
-                        RoundingMode.HALF_UP
-                );
+        basicSalary.divide(
+                BigDecimal.valueOf(workingDays),
+                2,
+                RoundingMode.HALF_UP
+        );
 
 
         // Hourly basic salary

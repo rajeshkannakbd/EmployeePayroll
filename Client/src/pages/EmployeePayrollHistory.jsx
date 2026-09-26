@@ -103,12 +103,12 @@ const EmployeePayrollHistory = () => {
             <div className="mb-3 flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 
                 <div>
-                    <p className="text-[11px] font-semibold text-green-600">
+                    <p className="text-[11px] font-semibold text-indigo-600">
                         Employee Self Service
                     </p>
 
                     <h1 className="mt-0.5 text-xl font-bold text-gray-900 sm:text-2xl">
-                        Payslip History
+                        My Payslips
                     </h1>
 
                     <p className="mt-0.5 text-xs text-gray-500">
@@ -149,12 +149,8 @@ const EmployeePayrollHistory = () => {
                 <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-2.5">
                     <div>
                         <h2 className="text-sm font-semibold text-gray-900">
-                            My Payroll History
+                            Payroll History
                         </h2>
-
-                        <p className="mt-0.5 text-[11px] text-gray-500">
-                            Only your payroll records are shown.
-                        </p>
                     </div>
 
                     <span className="text-[11px] text-gray-500">
@@ -334,7 +330,7 @@ const EmployeePayrollHistory = () => {
                                         onClick={() => changePage(pageNumber)}
                                         className={`min-w-8 rounded-lg px-2 py-1.5 text-xs font-semibold transition ${
                                             pageNumber === safePage
-                                                ? "bg-green-600 text-white"
+                                                ? "bg-indigo-600 text-white"
                                                 : "border border-gray-300 text-gray-700 hover:bg-gray-50"
                                         }`}
                                     >

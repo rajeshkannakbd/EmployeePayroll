@@ -60,9 +60,10 @@ public class AttendanceService {
 
         // Calculate working days automatically
         int workingDays =
-                WorkingDaysCalculator.calculate(
-                        request.getPayPeriod()
-                );
+        WorkingDaysCalculator.calculate(
+                request.getPayPeriod(),
+                request.getHolidayDates()
+        );
 
         // Find employee
         Employee employee =

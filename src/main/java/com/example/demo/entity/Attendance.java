@@ -50,7 +50,6 @@ public class Attendance {
     private Integer leaveDays;
 
     @PositiveOrZero(message = "Overtime hours cannot be less than 0")
-    @Max(value = 16, message = "Overtime cannot exceed 16 hours")
     @NotNull(message = "Overtime hours cannot be null")
     private BigDecimal overtimeHours;
 

@@ -128,11 +128,12 @@ const Dashboard = () => {
         );
 
         setMyPayrolls(
-          Array.isArray(payrollResponse.data) ? payrollResponse.data : []
+          Array.isArray(payrollResponse.data) ? payrollResponse.data.slice(0, 2) : []
         );
 
         return;
       }
+      
 
       const [employeesResponse, payrollResponse, attendanceResponse] =
         await Promise.all([
@@ -240,7 +241,7 @@ const Dashboard = () => {
           const bDate = b.payDate ? new Date(b.payDate).getTime() : 0;
           return bDate - aDate;
         })
-        .slice(0, 6),
+        .slice(0, 2),
     [payrolls]
   );
 
@@ -295,7 +296,7 @@ const totalDepartments = useMemo(() => {
   return departmentKeys.size;
 }, [employees]);
 
-console.log(myProfile);
+
 
 
   // =========================================================
@@ -568,14 +569,16 @@ console.log(myProfile);
               </div>
             </section>
           </div>
+          <section className="mt-3 min-h-0 flex-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
 
-          {/* RECENT PAYROLL */}
-          <section className="mt-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5">
               <div>
-                <h2 className="text-sm font-semibold text-slate-800">Recent Payslips</h2>
-                <p className="mt-0.5 text-[11px] text-slate-400">Latest payroll records</p>
+                <h2 className="text-sm font-semibold text-slate-800">
+                  Recent Payslips
+                </h2>
               </div>
+
               <button
                 type="button"
                 onClick={() => navigate("/my-payroll")}
@@ -586,40 +589,75 @@ console.log(myProfile);
             </div>
 
             {myPayrolls.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[680px]">
+              <div>
+                <table className="w-full table-fixed ">
                   <thead className="bg-slate-50">
                     <tr>
-                      <th className="px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-400">Pay Period</th>
-                      <th className="px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-400">Pay Date</th>
-                      <th className="px-4 py-2 text-right text-[10px] font-semibold uppercase tracking-wide text-slate-400">Gross</th>
-                      <th className="px-4 py-2 text-right text-[10px] font-semibold uppercase tracking-wide text-slate-400">Net</th>
-                      <th className="px-4 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-400">Status</th>
-                      <th className="px-4 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-400">Action</th>
+                      <th className="w-[18%] px-3 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                        Pay Period
+                      </th>
+
+                      <th className="w-[18%] px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                        Pay Date
+                      </th>
+
+                      <th className="w-[16%] px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                        Gross
+                      </th>
+
+                      <th className="w-[16%] px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                        Net
+                      </th>
+
+                      <th className="w-[16%] px-3 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                        Status
+                      </th>
+
+                      <th className="w-[16%] px-3 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                        Action
+                      </th>
                     </tr>
                   </thead>
+
                   <tbody className="divide-y divide-slate-100">
-                    {myPayrolls.slice(0, 4).map((payroll) => (
-                      <tr key={payroll.payrollId} className="transition hover:bg-slate-50">
-                        <td className="px-4 py-2.5 text-xs font-medium text-slate-800">
+
+                    {myPayrolls.slice(0, 2).map((payroll) => (
+                      <tr
+                        key={payroll.payrollId}
+                        className="transition hover:bg-slate-50"
+                      >
+                        {/* Pay Period */}
+                        <td className="truncate px-3 py-2.5 text-xs font-medium text-slate-800">
                           {formatMonth(payroll.payPeriod)}
                         </td>
-                        <td className="px-4 py-2.5 text-xs text-slate-500">
+
+                        {/* Pay Date */}
+                        <td className="truncate px-3 py-2.5 text-xs text-slate-500">
                           {formatDate(payroll.payDate)}
                         </td>
-                        <td className="px-4 py-2.5 text-right text-xs text-slate-600">
+
+                        {/* Gross */}
+                        <td className="truncate px-3 py-2.5 text-right text-xs text-slate-600">
                           {formatCurrency(payroll.grossSalary)}
                         </td>
-                        <td className="px-4 py-2.5 text-right text-xs font-semibold text-slate-800">
+
+                        {/* Net */}
+                        <td className="truncate px-3 py-2.5 text-right text-xs font-semibold text-slate-800">
                           {formatCurrency(payroll.netSalary)}
                         </td>
-                        <td className="px-4 py-2.5 text-center">
+
+                        {/* Status */}
+                        <td className="px-3 py-2.5 text-center">
                           <StatusBadge status={payroll.status} />
                         </td>
-                        <td className="px-4 py-2.5 text-center">
+
+                        {/* Action */}
+                        <td className="px-3 py-2.5 text-center">
                           <button
                             type="button"
-                            onClick={() => navigate(`/payslip/${payroll.payrollId}`)}
+                            onClick={() =>
+                              navigate(`/payslip/${payroll.payrollId}`)
+                            }
                             className="text-xs font-semibold text-indigo-600 hover:text-indigo-800"
                           >
                             Payslip
@@ -627,12 +665,16 @@ console.log(myProfile);
                         </td>
                       </tr>
                     ))}
+
                   </tbody>
                 </table>
               </div>
             ) : (
-              <div className="p-6 text-center text-sm text-slate-500">No payslips available.</div>
+              <div className="px-6 py-6 text-center text-sm text-slate-500">
+                No payslips available.
+              </div>
             )}
+
           </section>
         </div>
       </div>
@@ -647,6 +689,7 @@ console.log(myProfile);
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden px-3 py-2 sm:px-4">
       <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col">
+
         {/* HEADER */}
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 pb-3">
           <div>
@@ -654,10 +697,10 @@ console.log(myProfile);
               {role} Dashboard
             </p>
             <h1 className="mt-0.5 text-xl font-bold tracking-tight text-slate-900">
-              Payroll Overview
+              Company Overview
             </h1>
             <p className="mt-0.5 text-xs text-slate-500">
-              {formatMonth(currentMonth)}
+              Workforce, payroll and attendance · {formatMonth(currentMonth)}
             </p>
           </div>
 
@@ -682,61 +725,81 @@ console.log(myProfile);
           </div>
         </div>
 
-        {/* KEY METRICS */}
+        {/* COMPANY METRICS — each summary appears only once */}
         <div className="mt-3 grid shrink-0 grid-cols-2 gap-2 xl:grid-cols-4">
+
           <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
             <div className="flex items-center justify-between">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Active Employees</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                Total Employees
+              </p>
               <Users size={15} className="text-indigo-500" />
             </div>
-            <p className="mt-1.5 text-xl font-bold text-slate-900">{activeEmployees}</p>
-            <p className="text-[10px] text-slate-400">of {employees.length} total</p>
+            <p className="mt-1.5 text-xl font-bold text-slate-900">
+              {employees.length}
+            </p>
+            <p className="text-[10px] text-slate-400">
+              {activeEmployees} active
+            </p>
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
-  <div className="flex items-center justify-between">
-    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-      Assigned Departments
-    </p>
-    <Building2 size={15} className="text-indigo-500" />
-  </div>
-
-  <p className="mt-1.5 text-xl font-bold text-slate-900">
-     {totalDepartments}
-  </p>
-
-  <p className="text-[10px] text-slate-400">
-     Departments with Active Employees
-  </p>
-</div>
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                Departments
+              </p>
+              <Building2 size={15} className="text-indigo-500" />
+            </div>
+            <p className="mt-1.5 text-xl font-bold text-slate-900">
+              {totalDepartments}
+            </p>
+            <p className="text-[10px] text-slate-400">
+              Assigned departments
+            </p>
+          </div>
 
           <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
             <div className="flex items-center justify-between">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Gross Payroll</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                Gross Payroll
+              </p>
               <IndianRupee size={15} className="text-slate-500" />
             </div>
-            <p className="mt-1.5 text-xl font-bold text-slate-900">{formatCurrency(totalGrossPayroll)}</p>
-            <p className="text-[10px] text-slate-400">Before deductions</p>
+            <p className="mt-1.5 text-xl font-bold text-slate-900">
+              {formatCurrency(totalGrossPayroll)}
+            </p>
+            <p className="text-[10px] text-slate-400">Current month</p>
           </div>
 
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 shadow-sm">
+          <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
             <div className="flex items-center justify-between">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-700">Pending Approval</p>
-              <Clock3 size={15} className="text-amber-600" />
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                Net Payroll
+              </p>
+              <WalletCards size={15} className="text-indigo-500" />
             </div>
-            <p className="mt-1.5 text-xl font-bold text-amber-900">{pendingPayrolls}</p>
-            <p className="text-[10px] text-amber-700">Generated payroll records</p>
+            <p className="mt-1.5 text-xl font-bold text-slate-900">
+              {formatCurrency(totalNetPayroll)}
+            </p>
+            <p className="text-[10px] text-slate-400">Current month</p>
           </div>
         </div>
 
         {/* OPERATIONAL SUMMARY */}
         <div className="mt-3 grid shrink-0 grid-cols-1 gap-3 xl:grid-cols-3">
+
+          {/* PAYROLL PROCESSING — counts/status only; no repeated salary totals */}
           <section className="min-h-[220px] overflow-visible rounded-xl border border-slate-200 bg-white shadow-sm xl:col-span-2">
             <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-4 py-2.5">
               <div>
-                <h2 className="text-sm font-semibold text-slate-800">Payroll Status</h2>
-                <p className="mt-0.5 text-[11px] text-slate-400">Current month processing status</p>
+                <h2 className="text-sm font-semibold text-slate-800">
+                  Payroll Processing
+                </h2>
+                <p className="mt-0.5 text-[11px] text-slate-400">
+                  Current month processing status
+                </p>
               </div>
+
               <button
                 type="button"
                 onClick={() => navigate("/payroll/history")}
@@ -747,28 +810,33 @@ console.log(myProfile);
             </div>
 
             <div className="p-4">
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              <div className="grid grid-cols-2 gap-2">
                 <div className="rounded-lg bg-slate-50 px-3 py-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Records</p>
-                  <p className="mt-1 text-lg font-bold text-slate-900">{currentMonthPayrolls.length}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                    Payroll Records
+                  </p>
+                  <p className="mt-1 text-lg font-bold text-slate-900">
+                    {currentMonthPayrolls.length}
+                  </p>
                 </div>
 
                 <div className="rounded-lg bg-slate-50 px-3 py-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Net Pay</p>
-                  <p className="mt-1 text-lg font-bold text-slate-900">{formatCurrency(totalNetPayroll)}</p>
-                </div>
-
-                <div className="rounded-lg bg-slate-50 px-3 py-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Gross Pay</p>
-                  <p className="mt-1 text-lg font-bold text-slate-900">{formatCurrency(totalGrossPayroll)}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                    Pending Approval
+                  </p>
+                  <p className="mt-1 text-lg font-bold text-amber-700">
+                    {pendingPayrolls}
+                  </p>
                 </div>
               </div>
 
-              <div className={`mt-3 flex items-center justify-between rounded-lg border px-3 py-2.5 ${
-                pendingPayrolls > 0
-                  ? "border-amber-100 bg-amber-50"
-                  : "border-emerald-100 bg-emerald-50"
-              }`}>
+              <div
+                className={`mt-3 flex items-center justify-between rounded-lg border px-3 py-2.5 ${
+                  pendingPayrolls > 0
+                    ? "border-amber-100 bg-amber-50"
+                    : "border-emerald-100 bg-emerald-50"
+                }`}
+              >
                 <div className="flex min-w-0 items-center gap-2">
                   {pendingPayrolls > 0 ? (
                     <CircleAlert size={16} className="shrink-0 text-amber-600" />
@@ -778,8 +846,10 @@ console.log(myProfile);
 
                   <p className="truncate text-xs font-semibold text-slate-800">
                     {pendingPayrolls > 0
-                      ? `${pendingPayrolls} payroll record${pendingPayrolls === 1 ? "" : "s"} awaiting approval`
-                      : "No payroll records awaiting approval"}
+                      ? `${pendingPayrolls} payroll record${
+                          pendingPayrolls === 1 ? "" : "s"
+                        } awaiting approval`
+                      : "All current payroll records are approved"}
                   </p>
                 </div>
 
@@ -796,12 +866,14 @@ console.log(myProfile);
             </div>
           </section>
 
+          {/* ATTENDANCE */}
           <section className="min-h-[220px] overflow-visible rounded-xl border border-slate-200 bg-white shadow-sm">
             <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5">
               <div>
                 <h2 className="text-sm font-semibold text-slate-800">Attendance</h2>
                 <p className="mt-0.5 text-[11px] text-slate-400">Current month</p>
               </div>
+
               <button
                 type="button"
                 onClick={() => navigate("/attendance")}
@@ -814,15 +886,16 @@ console.log(myProfile);
             <div className="space-y-4 p-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-slate-500">Attendance records</span>
-                <span className="text-sm font-semibold text-slate-800">{currentMonthAttendance.length}</span>
+                <span className="text-sm font-semibold text-slate-800">
+                  {currentMonthAttendance.length}
+                </span>
               </div>
+
               <div className="flex items-center justify-between">
                 <span className="text-xs text-slate-500">Present days</span>
-                <span className="text-sm font-semibold text-emerald-700">{totalPresentDays}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-500">Active employees</span>
-                <span className="text-sm font-semibold text-slate-800">{activeEmployees}</span>
+                <span className="text-sm font-semibold text-emerald-700">
+                  {totalPresentDays}
+                </span>
               </div>
             </div>
           </section>
@@ -833,8 +906,8 @@ console.log(myProfile);
           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5">
             <div>
               <h2 className="text-sm font-semibold text-slate-800">Recent Payroll</h2>
-              <p className="mt-0.5 text-[11px] text-slate-400">Latest processed records</p>
             </div>
+
             <button
               type="button"
               onClick={() => navigate("/payroll/history")}
@@ -849,11 +922,21 @@ console.log(myProfile);
               <table className="w-full min-w-[700px]">
                 <thead className="sticky top-0 z-10 bg-slate-50">
                   <tr>
-                    <th className="px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-400">Employee</th>
-                    <th className="px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-400">Period</th>
-                    <th className="px-4 py-2 text-right text-[10px] font-semibold uppercase tracking-wide text-slate-400">Net Pay</th>
-                    <th className="px-4 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-400">Status</th>
-                    <th className="px-4 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-400">Pay Date</th>
+                    <th className="px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                      Employee
+                    </th>
+                    <th className="px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                      Period
+                    </th>
+                    <th className="px-4 py-2 text-right text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                      Net Pay
+                    </th>
+                    <th className="px-4 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                      Status
+                    </th>
+                    <th className="px-4 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                      Pay Date
+                    </th>
                   </tr>
                 </thead>
 
@@ -868,15 +951,19 @@ console.log(myProfile);
                           {payroll.employee?.employeeCode || "-"}
                         </p>
                       </td>
+
                       <td className="px-4 py-2.5 text-xs text-slate-600">
                         {formatMonth(payroll.payPeriod)}
                       </td>
+
                       <td className="px-4 py-2.5 text-right text-xs font-semibold text-slate-800">
                         {formatCurrency(payroll.netSalary)}
                       </td>
+
                       <td className="px-4 py-2.5 text-center">
                         <StatusBadge status={payroll.status} />
                       </td>
+
                       <td className="px-4 py-2.5 text-center text-xs text-slate-500">
                         {formatDate(payroll.payDate)}
                       </td>
@@ -886,12 +973,14 @@ console.log(myProfile);
               </table>
             </div>
           ) : (
-            <div className="p-6 text-center text-sm text-slate-500">No payroll records available.</div>
+            <div className="p-6 text-center text-sm text-slate-500">
+              No payroll records available.
+            </div>
           )}
         </section>
       </div>
     </div>
   );
-};
+}
 
 export default Dashboard;

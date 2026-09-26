@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import java.util.List;
 
 @Getter
 @Setter
@@ -35,5 +36,7 @@ public class AttendanceRequest {
 
     @DecimalMin(value = "0.0",message = "Overtime hours cannot be negative")
     private BigDecimal overtimeHours;
+
+    private List<String> holidayDates;
 
 }
