@@ -60,7 +60,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         return User.builder()
                 .username(employee.getEmployeeCode())
                 .password(employee.getPasswordHash())
-                .roles(employee.getRole().name())
+                .roles(employee.getRole().getCode())
                 .disabled(!enabled)
                 .build();
     }

@@ -22,9 +22,7 @@ import {
 } from "lucide-react";
 
 const Sidebar = ({ collapsed, onToggle }) => {
-  const { auth } = useAuth();
-
-  const role = auth?.role;
+  const { auth, hasPermission, logout} = useAuth();
 
   const sections = [
     {
@@ -34,19 +32,19 @@ const Sidebar = ({ collapsed, onToggle }) => {
           name: "Dashboard",
           path: "/",
           icon: LayoutDashboard,
-          roles: ["ADMIN", "HR", "EMPLOYEE"],
+          public: true,
         },
         {
           name: "Employees",
           path: "/employees",
           icon: Users,
-          roles: ["ADMIN", "HR"],
+          permission: "EMPLOYEE_VIEW",
         },
         {
           name: "Departments",
           path: "/departments",
           icon: Building2,
-          roles: ["ADMIN", "HR"],
+          permission: "DEPARTMENT_VIEW",
         },
       ],
     },
@@ -58,19 +56,19 @@ const Sidebar = ({ collapsed, onToggle }) => {
           name: "Run Payroll",
           path: "/payroll/generate",
           icon: PlayCircle,
-          roles: ["ADMIN", "HR"],
+          permission: "PAYROLL_RUN",
         },
         {
           name: "Salary Structure",
           path: "/salary-structure",
           icon: CircleDollarSign,
-          roles: ["ADMIN", "HR"],
+          permission: "SALARY_STRUCTURE_VIEW",
         },
         {
           name: "Payroll History",
           path: "/payroll/history",
           icon: FileText,
-          roles: ["ADMIN", "HR"],
+          permission: "PAYROLL_HISTORY_VIEW",
         },
       ],
     },
@@ -82,13 +80,13 @@ const Sidebar = ({ collapsed, onToggle }) => {
           name: "Attendance Sheets",
           path: "/attendance",
           icon: CalendarDays,
-          roles: ["ADMIN", "HR"],
+          permission: "ATTENDANCE_VIEW",
         },
         {
           name: "Daily Attendance",
           path: null,
           icon: Clock3,
-          roles: ["ADMIN", "HR"],
+          permission: "ATTENDANCE_VIEW",
           comingSoon: true,
         },
       ],
@@ -101,12 +99,14 @@ const Sidebar = ({ collapsed, onToggle }) => {
           name: "My Attendance",
           path: "/my-attendance",
           icon: UserRound,
+          permission: "MY_ATTENDANCE_VIEW",
           roles: ["EMPLOYEE"],
         },
         {
           name: "My Payslips",
           path: "/my-payroll",
           icon: ReceiptText,
+          permission: "MY_PAYSLIPS_VIEW",
           roles: ["EMPLOYEE"],
         },
       ],
@@ -115,28 +115,28 @@ const Sidebar = ({ collapsed, onToggle }) => {
     {
       title: "ADMINISTRATION",
       items: [
-        {
-          name: "Audit Logs",
-          path: null,
-          icon: ShieldCheck,
-          roles: ["ADMIN"],
-          comingSoon: true,
-        },
+        // {
+        //   name: "Audit Logs",
+        //   path: null,
+        //   icon: ShieldCheck,
+        //   roles: ["ADMIN"],
+        //   comingSoon: true,
+        // },
         {
           name: "Settings",
-          path: null,
+          path: "/settings",
           icon: Settings,
           roles: ["ADMIN"],
-          comingSoon: true,
         },
       ],
     },
   ];
 
-  const handleLogout = () => {
-    localStorage.removeItem("auth");
-    window.location.href = "/login";
-  };
+ const handleLogout = () => {
+      logout();
+      window.location.href = "/login";
+    };
+
 
   return (
     <aside
@@ -213,9 +213,25 @@ const Sidebar = ({ collapsed, onToggle }) => {
         }`}
       >
         {sections.map((section) => {
-          const visibleItems = section.items.filter((item) =>
-            item.roles.includes(role)
-          );
+          const visibleItems = section.items.filter((item) => {
+            // Dashboard / public menu item
+            if (item.public) {
+              return true;
+            }
+
+            // New permission-based menu items
+            if (item.permission) {
+              return hasPermission(item.permission);
+            }
+
+            // Keep existing role-based fallback
+            // for features that are still Coming Soon
+            if (item.roles) {
+              return item.roles.includes(auth?.role);
+            }
+
+            return false;
+          });
 
           if (visibleItems.length === 0) {
             return null;

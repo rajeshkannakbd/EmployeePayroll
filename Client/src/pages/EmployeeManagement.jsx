@@ -786,10 +786,10 @@ const EmployeeManagement = () => {
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden px-3 pb-2">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden px-3">
       <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col">
       {/* HEADER */}
-      <div className="flex shrink-0 flex-col gap-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex shrink-0 flex-col gap-3 py-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold text-slate-800">
             Employee Management

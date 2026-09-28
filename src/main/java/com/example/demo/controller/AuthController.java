@@ -56,7 +56,7 @@ public class AuthController {
                         employee.getEmployeeId(),
                         employee.getEmployeeCode(),
                         employeeName,
-                        employee.getRole().name(),
+                        employee.getRole().getCode(),
                         employee.isMustChangePassword()
                 );
 

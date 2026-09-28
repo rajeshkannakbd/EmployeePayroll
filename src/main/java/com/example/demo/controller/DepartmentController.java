@@ -6,6 +6,7 @@ import com.example.demo.service.DepartmentService;
 
 import jakarta.validation.Valid;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,6 +25,7 @@ public class DepartmentController {
 
 
     // GET ALL DEPARTMENTS
+    @PreAuthorize("hasAuthority('DEPARTMENT_VIEW')")
     @GetMapping
     public List<DepartmentResponse> getAllDepartments() {
 
@@ -32,6 +34,7 @@ public class DepartmentController {
 
 
     // GET DEPARTMENT BY ID
+    @PreAuthorize("hasAuthority('DEPARTMENT_VIEW')")
     @GetMapping("/{id}")
     public DepartmentResponse getDepartmentById(
             @PathVariable Long id
@@ -42,6 +45,7 @@ public class DepartmentController {
 
 
     // CREATE DEPARTMENT
+    @PreAuthorize("hasAuthority('DEPARTMENT_CREATE')")
     @PostMapping
     public DepartmentResponse createDepartment(
             @Valid @RequestBody DepartmentRequest request
@@ -52,6 +56,7 @@ public class DepartmentController {
 
 
     // UPDATE DEPARTMENT
+    @PreAuthorize("hasAuthority('DEPARTMENT_EDIT')")
     @PutMapping("/{id}")
     public DepartmentResponse updateDepartment(
             @PathVariable Long id,
@@ -66,6 +71,7 @@ public class DepartmentController {
 
 
     // DELETE DEPARTMENT
+    @PreAuthorize("hasAuthority('DEPARTMENT_DELETE')")
     @DeleteMapping("/{id}")
     public void deleteDepartment(
             @PathVariable Long id

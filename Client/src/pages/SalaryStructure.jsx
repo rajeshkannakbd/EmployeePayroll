@@ -1044,7 +1044,7 @@ const SalaryStructure = () => {
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden px-3 py-2 sm:px-4">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden px-3 py-1 sm:px-4">
       <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col">
       {/* HEADER */}
       <div className="flex shrink-0 flex-col gap- sm:flex-row sm:items-center sm:justify-between">

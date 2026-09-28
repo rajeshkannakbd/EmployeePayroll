@@ -10,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-
+import com.example.demo.dto.employee.AssignRoleRequest;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -51,11 +51,11 @@ public class EmployeeController {
 
     // =========================================================
     // GET ALL EMPLOYEES
-    // ADMIN + HR
+    // Permission: EMPLOYEE_VIEW
     // URL: GET /employees
     // =========================================================
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    @PreAuthorize("hasAuthority('EMPLOYEE_VIEW')")
     @GetMapping
     public ResponseEntity<List<EmployeeResponse>> getAllEmployees() {
 
@@ -68,11 +68,11 @@ public class EmployeeController {
 
     // =========================================================
     // GET EMPLOYEE BY ID
-    // ADMIN + HR
+    // Permission: EMPLOYEE_VIEW
     // URL: GET /employees/{id}
     // =========================================================
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    @PreAuthorize("hasAuthority('EMPLOYEE_VIEW')")
     @GetMapping("/{id}")
     public ResponseEntity<EmployeeResponse> getEmployeeById(
             @PathVariable Long id
@@ -87,11 +87,11 @@ public class EmployeeController {
 
     // =========================================================
     // CREATE EMPLOYEE
-    // ADMIN + HR
+    // Permission: EMPLOYEE_CREATE
     // URL: POST /employees
     // =========================================================
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    @PreAuthorize("hasAuthority('EMPLOYEE_CREATE')")
     @PostMapping
     public ResponseEntity<EmployeeResponse> createEmployee(
             @Valid @RequestBody EmployeeRequest request
@@ -106,11 +106,11 @@ public class EmployeeController {
 
     // =========================================================
     // UPDATE EMPLOYEE
-    // ADMIN + HR
+    // Permission: EMPLOYEE_EDIT
     // URL: PUT /employees/{id}
     // =========================================================
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    @PreAuthorize("hasAuthority('EMPLOYEE_EDIT')")
     @PutMapping("/{id}")
     public ResponseEntity<EmployeeResponse> updateEmployee(
             @PathVariable Long id,
@@ -129,11 +129,11 @@ public class EmployeeController {
 
     // =========================================================
     // DELETE EMPLOYEE
-    // ADMIN + HR
+    // Permission: EMPLOYEE_DELETE
     // URL: DELETE /employees/{id}
     // =========================================================
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    @PreAuthorize("hasAuthority('EMPLOYEE_DELETE')")
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteEmployee(
             @PathVariable Long id
@@ -143,6 +143,28 @@ public class EmployeeController {
 
         return ResponseEntity.ok(
                 "Employee deleted successfully"
+        );
+    }
+
+
+    // =========================================================
+    // ASSIGN ROLE
+    // ADMIN ONLY
+    // URL: PATCH /employees/{id}/role
+    // =========================================================
+
+    @PatchMapping("/{id}/role")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<EmployeeResponse> assignRole(
+            @PathVariable Long id,
+            @Valid @RequestBody AssignRoleRequest request
+    ) {
+
+        return ResponseEntity.ok(
+                employeeService.assignRole(
+                        id,
+                        request.getRoleId()
+                )
         );
     }
 }

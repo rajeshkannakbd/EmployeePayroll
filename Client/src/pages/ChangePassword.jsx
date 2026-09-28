@@ -149,7 +149,7 @@ const ChangePassword = () => {
     `w-full rounded-xl border ${
       errors[name]
         ? "border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-100"
-        : "border-slate-300 focus:border-[#1BBD36] focus:ring-[#1BBD36]/10"
+        : "border-slate-300 focus:border-indigo-600 focus:ring-indigo-600/10"
     } px-4 py-3 pr-20 text-sm text-slate-800 outline-none transition disabled:cursor-not-allowed disabled:bg-slate-100`;
 
   return (
@@ -180,7 +180,7 @@ const ChangePassword = () => {
             </div>
 
             <div className="mt-20 max-w-md">
-              <p className="text-sm font-medium text-green-400">
+              <p className="text-sm font-medium text-indigo-400">
                 SECURITY UPDATE
               </p>
 
@@ -195,7 +195,7 @@ const ChangePassword = () => {
 
               <div className="mt-10 space-y-5">
                 <div className="flex gap-4">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-600 text-sm font-bold text-white">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white">
                     1
                   </div>
 
@@ -210,7 +210,7 @@ const ChangePassword = () => {
                 </div>
 
                 <div className="flex gap-4">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-600 text-sm font-bold text-white">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white">
                     2
                   </div>
 
@@ -225,7 +225,7 @@ const ChangePassword = () => {
                 </div>
 
                 <div className="flex gap-4">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-600 text-sm font-bold text-white">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white">
                     3
                   </div>
 
@@ -305,13 +305,13 @@ const ChangePassword = () => {
               {successMessage && (
                 <div
                   role="status"
-                  className="mb-5 rounded-xl border border-green-200 bg-green-50 px-4 py-3"
+                  className="mb-5 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3"
                 >
-                  <p className="text-sm font-semibold text-green-700">
+                  <p className="text-sm font-semibold text-indigo-700">
                     Password updated
                   </p>
 
-                  <p className="mt-1 text-sm text-green-600">
+                  <p className="mt-1 text-sm text-indigo-600">
                     {successMessage}
                   </p>
                 </div>
@@ -358,7 +358,7 @@ const ChangePassword = () => {
                         )
                       }
                       disabled={loading}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#1BBD36] hover:text-[#159A2C]"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-indigo-600 hover:text-[#159A2C]"
                     >
                       {showCurrentPassword ? "Hide" : "Show"}
                     </button>
@@ -404,7 +404,7 @@ const ChangePassword = () => {
                         setShowNewPassword(!showNewPassword)
                       }
                       disabled={loading}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#1BBD36] hover:text-[#159A2C]"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-indigo-600 hover:text-[#159A2C]"
                     >
                       {showNewPassword ? "Hide" : "Show"}
                     </button>
@@ -456,7 +456,7 @@ const ChangePassword = () => {
                         )
                       }
                       disabled={loading}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#1BBD36] hover:text-[#159A2C]"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-indigo-600 hover:text-[#159A2C]"
                     >
                       {showConfirmPassword ? "Hide" : "Show"}
                     </button>
@@ -482,7 +482,7 @@ const ChangePassword = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full rounded-xl bg-[#1BBD36] px-5 py-3 font-semibold text-white transition hover:bg-[#159A2C] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="w-full rounded-xl bg-indigo-600 px-5 py-3 font-semibold text-white transition hover:bg-indigo-900 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {loading
                     ? "Changing password..."

@@ -5,7 +5,6 @@ import com.example.demo.entity.Employee;
 import com.example.demo.entity.Role;
 import com.example.demo.repository.EmployeeRepository;
 import com.example.demo.security.JwtService;
-
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
@@ -75,9 +74,9 @@ public class AuthService {
         }
 
         if (employee.getRole() == null) {
-            throw new RuntimeException(
-                    "Role is not assigned"
-            );
+        throw new RuntimeException(
+                "Role is not assigned. Please contact HR."
+        );
         }
 
         boolean passwordMatches =
@@ -171,7 +170,9 @@ public class AuthService {
         // Assign default role if no role exists
 
         if (employee.getRole() == null) {
-            employee.setRole(Role.EMPLOYEE);
+        throw new RuntimeException(
+                "Role is not assigned. Please contact HR."
+        );
         }
 
 

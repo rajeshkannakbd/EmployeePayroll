@@ -10,6 +10,7 @@ import com.example.demo.mapper.EmployeeMapper;
 import com.example.demo.repository.DepartmentRepository;
 import com.example.demo.repository.EmployeeCodeSequenceRepository;
 import com.example.demo.repository.EmployeeRepository;
+import com.example.demo.repository.RoleRepository;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -31,22 +32,23 @@ public class EmployeeService {
     private final EmployeeCodeSequenceRepository employeeCodeSequenceRepository;
     private final EmployeeMapper employeeMapper;
     private final PasswordEncoder passwordEncoder;
-
+    private final RoleRepository roleRepository;
 
     public EmployeeService(
             EmployeeRepository employeeRepository,
             DepartmentRepository departmentRepository,
             EmployeeCodeSequenceRepository employeeCodeSequenceRepository,
             EmployeeMapper employeeMapper,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            RoleRepository roleRepository
     ) {
         this.employeeRepository = employeeRepository;
         this.departmentRepository = departmentRepository;
         this.employeeCodeSequenceRepository = employeeCodeSequenceRepository;
         this.employeeMapper = employeeMapper;
         this.passwordEncoder = passwordEncoder;
+        this.roleRepository = roleRepository;
     }
-
 
     // GET ALL EMPLOYEES
     @Cacheable("employees-all")
@@ -58,12 +60,11 @@ public class EmployeeService {
                 .toList();
     }
 
-
     // CREATE EMPLOYEE
     @CacheEvict(
-        cacheNames = "employees-all",
-        allEntries = true
-        )
+            cacheNames = "employees-all",
+            allEntries = true
+    )
     @Transactional
     public EmployeeResponse createEmployee(EmployeeRequest request) {
 
@@ -95,8 +96,16 @@ public class EmployeeService {
         // Force password change at first login
         employee.setMustChangePassword(true);
 
-        // Default role
-        employee.setRole(Role.EMPLOYEE);
+        // Default role = EMPLOYEE
+        Role employeeRole = roleRepository
+                .findByCodeIgnoreCase("EMPLOYEE")
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Default EMPLOYEE role not found"
+                        )
+                );
+
+        employee.setRole(employeeRole);
 
         Employee savedEmployee =
                 employeeRepository.save(employee);
@@ -104,11 +113,14 @@ public class EmployeeService {
         return employeeMapper.toResponse(savedEmployee);
     }
 
-
     // GET EMPLOYEE BY ID
-    @Cacheable(cacheNames = "employee-by-id",key = "#id")
+    @Cacheable(
+            cacheNames = "employee-by-id",
+            key = "#id"
+    )
     @Transactional(readOnly = true)
     public EmployeeResponse getEmployeeById(Long id) {
+
         Employee employee =
                 employeeRepository.findById(id)
                         .orElseThrow(() ->
@@ -120,18 +132,17 @@ public class EmployeeService {
         return employeeMapper.toResponse(employee);
     }
 
-
     // UPDATE EMPLOYEE
     @Caching(evict = {
-        @CacheEvict(
-                cacheNames = "employees-all",
-                allEntries = true
-        ),
-        @CacheEvict(
-                cacheNames = "employee-by-id",
-                key = "#id"
-        )
-        })
+            @CacheEvict(
+                    cacheNames = "employees-all",
+                    allEntries = true
+            ),
+            @CacheEvict(
+                    cacheNames = "employee-by-id",
+                    key = "#id"
+            )
+    })
     @Transactional
     public EmployeeResponse updateEmployee(
             Long id,
@@ -161,18 +172,17 @@ public class EmployeeService {
         return employeeMapper.toResponse(updatedEmployee);
     }
 
-
     // DELETE EMPLOYEE
     @Caching(evict = {
-        @CacheEvict(
-                cacheNames = "employees-all",
-                allEntries = true
-        ),
-        @CacheEvict(
-                cacheNames = "employee-by-id",
-                key = "#id"
-        )
-        })
+            @CacheEvict(
+                    cacheNames = "employees-all",
+                    allEntries = true
+            ),
+            @CacheEvict(
+                    cacheNames = "employee-by-id",
+                    key = "#id"
+            )
+    })
     @Transactional
     public void deleteEmployee(Long id) {
 
@@ -187,9 +197,7 @@ public class EmployeeService {
         employeeRepository.delete(employee);
     }
 
-
     // DEPARTMENT HELPER
-
     private Department getDepartment(Long departmentId) {
 
         if (departmentId == null) {
@@ -203,4 +211,43 @@ public class EmployeeService {
                         )
                 );
     }
+    // =========================================================
+// ASSIGN ROLE TO EMPLOYEE
+// =========================================================
+
+        @Transactional
+        public EmployeeResponse assignRole(
+                Long employeeId,
+                Long roleId
+        ) {
+
+        Employee employee =
+                employeeRepository.findById(employeeId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Employee not found"
+                                )
+                        );
+
+        Role role =
+                roleRepository.findById(roleId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Role not found"
+                                )
+                        );
+
+        if (!role.isActive()) {
+                throw new RuntimeException(
+                        "Cannot assign an inactive role"
+                );
+        }
+
+        employee.setRole(role);
+
+        Employee updatedEmployee =
+                employeeRepository.save(employee);
+
+        return employeeMapper.toResponse(updatedEmployee);
+        }
 }

@@ -200,7 +200,7 @@ if (
 
             <div className="mb-8 flex items-center gap-3 lg:hidden">
 
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-green-600 font-bold text-white">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 font-bold text-white">
                 P
               </div>
 
@@ -278,7 +278,7 @@ if (
                     placeholder="Employee Code, Mobile or Email"
                     autoComplete="username"
                     disabled={loading}
-                    className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-green-600 focus:ring-2 focus:ring-green-100 disabled:bg-slate-100"
+                    className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 disabled:bg-slate-100"
                   />
 
                   <p className="mt-2 text-xs text-slate-400">
@@ -316,7 +316,7 @@ if (
                       placeholder="Enter your password"
                       autoComplete="current-password"
                       disabled={loading}
-                      className="w-full rounded-xl border border-slate-300 px-4 py-3 pr-20 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-green-600 focus:ring-2 focus:ring-green-100 disabled:bg-slate-100"
+                      className="w-full rounded-xl border border-slate-300 px-4 py-3 pr-20 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 disabled:bg-slate-100"
                     />
 
                     <button
@@ -373,7 +373,7 @@ if (
 
     <Link
       to="/signup"
-      className="font-semibold text-green-700 hover:text-green-800"
+      className="font-semibold text-indigo-700 hover:text-indigo-800"
     >
       Create Account
     </Link>

@@ -1,12 +1,15 @@
 package com.example.demo.security;
+
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.stereotype.Service;
+import com.example.demo.entity.Permission;
 import com.example.demo.entity.Employee;
 
 @Service
@@ -41,7 +44,15 @@ public class JwtService {
 
                 .claim(
                         "role",
-                        employee.getRole().name()
+                        employee.getRole().getCode()
+                ).claim(
+                        "permissions",
+                        employee.getRole()
+                        .getPermissions()
+                        .stream()
+                        .filter(Permission::isActive)
+                        .map(Permission::getCode)
+                        .toList()
                 )
 
                 .issuedAt(issuedAt)

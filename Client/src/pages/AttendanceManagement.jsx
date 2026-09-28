@@ -803,7 +803,7 @@ const AttendanceManagement = () => {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden px-3 ">
       {/* PAGE HEADER */}
-      <div className="flex flex-col gap-2 lg:flex-row mb-3 lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-2 lg:flex-row mb-3 lg:items-center lg:justify-between pt-1">
         <div>
           <h1 className="text-[22px] font-bold tracking-tight text-slate-800">
             Attendance Management

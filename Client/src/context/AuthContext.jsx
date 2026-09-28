@@ -43,6 +43,57 @@ export const AuthProvider = ({ children }) => {
     setAuth(null);
   };
 
+
+  // =========================================================
+  // PERMISSION CHECK
+  // =========================================================
+
+  const hasPermission = (permission) => {
+
+    if (!auth?.token) {
+      return false;
+    }
+
+    try {
+      const payload = JSON.parse(
+        atob(auth.token.split(".")[1])
+      );
+
+      const permissions = payload?.permissions || [];
+
+      return permissions.includes(permission);
+
+    } catch (error) {
+      console.error("Unable to read permissions from token:", error);
+      return false;
+    }
+  };
+
+
+  // =========================================================
+  // CHECK ANY PERMISSION
+  // =========================================================
+
+  const hasAnyPermission = (permissions) => {
+
+    return permissions.some((permission) =>
+      hasPermission(permission)
+    );
+  };
+
+
+  // =========================================================
+  // CHECK ALL PERMISSIONS
+  // =========================================================
+
+  const hasAllPermissions = (permissions) => {
+
+    return permissions.every((permission) =>
+      hasPermission(permission)
+    );
+  };
+
+
   return (
     <AuthContext.Provider
       value={{
@@ -51,6 +102,11 @@ export const AuthProvider = ({ children }) => {
         logout,
         loading,
         isAuthenticated: !!auth?.token,
+
+        // Permission helpers
+        hasPermission,
+        hasAnyPermission,
+        hasAllPermissions,
       }}
     >
       {children}

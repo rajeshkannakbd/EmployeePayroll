@@ -96,8 +96,11 @@ public class Employee {
     @JsonIgnore
     private String passwordHash;
 
-    @Enumerated(EnumType.STRING)
-    @Column
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+        name = "role_id",
+        nullable = false
+    )
     private Role role;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)

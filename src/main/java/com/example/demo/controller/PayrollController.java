@@ -27,21 +27,24 @@ public class PayrollController {
         PayrollService payrollService,
         PayslipPdfService payslipPdfService) {
 
-    this.payrollService = payrollService;
-    this.payslipPdfService = payslipPdfService;
-}
+        this.payrollService = payrollService;
+        this.payslipPdfService = payslipPdfService;
+    }
 
     @GetMapping
+    @PreAuthorize("hasAuthority('PAYROLL_VIEW')")
     public List<Payroll> getAllPayrolls() {
         return payrollService.getAllPayrolls();
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('PAYROLL_VIEW')")
     public Payroll getPayrollById(@PathVariable Long id) {
         return payrollService.getPayrollById(id);
     }
 
     @PostMapping("/generate")
+    @PreAuthorize("hasAuthority('PAYROLL_RUN')")
     public Payroll generatePayroll(
             @RequestBody PayrollGenerationRequest request) {
 
@@ -49,119 +52,142 @@ public class PayrollController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('PAYROLL_RUN')")
     public String deletePayroll(@PathVariable Long id) {
 
         payrollService.deletePayroll(id);
 
         return "Payroll deleted successfully";
     }
+
     @GetMapping("/employee/{employeeId}")
-        public List<Payroll> getPayrollsByEmployee(
-        @PathVariable Long employeeId) {
+    @PreAuthorize("hasAuthority('PAYROLL_VIEW')")
+    public List<Payroll> getPayrollsByEmployee(
+            @PathVariable Long employeeId) {
 
-    return payrollService.getPayrollsByEmployee(employeeId);
-} 
-@GetMapping("/employee/{employeeId}/{payPeriod}")
-public Payroll getPayrollByEmployeeAndPeriod(
-        @PathVariable Long employeeId,
-        @PathVariable String payPeriod) {
+        return payrollService.getPayrollsByEmployee(employeeId);
+    }
 
-    return payrollService.getPayrollByEmployeeAndPeriod(
-            employeeId,
-            payPeriod
-    );
-}
-@PutMapping("/{id}/approve")
-public Payroll approvePayroll(
-        @PathVariable Long id) {
+    @GetMapping("/employee/{employeeId}/{payPeriod}")
+    @PreAuthorize("hasAuthority('PAYROLL_VIEW')")
+    public Payroll getPayrollByEmployeeAndPeriod(
+            @PathVariable Long employeeId,
+            @PathVariable String payPeriod) {
 
-    return payrollService.approvePayroll(id);
-};
-@PutMapping("/{id}/paid")
-public Payroll markPayrollAsPaid(
-        @PathVariable Long id) {
+        return payrollService.getPayrollByEmployeeAndPeriod(
+                employeeId,
+                payPeriod
+        );
+    }
 
-    return payrollService.markPayrollAsPaid(id);
-};
-@GetMapping("/period/{payPeriod}")
-public List<Payroll> getPayrollsByPayPeriod(
-        @PathVariable String payPeriod) {
+    @PutMapping("/{id}/approve")
+    @PreAuthorize("hasAuthority('PAYROLL_RUN')")
+    public Payroll approvePayroll(
+            @PathVariable Long id) {
 
-    return payrollService.getPayrollsByPayPeriod(payPeriod);
-}
-@GetMapping("/status/{status}")
-public List<Payroll> getPayrollsByStatus(
-        @PathVariable String status) {
+        return payrollService.approvePayroll(id);
+    }
 
-    return payrollService.getPayrollsByStatus(status);
-}
-@GetMapping("/summary/{payPeriod}")
-public PayrollSummaryResponse getPayrollSummary(
-        @PathVariable String payPeriod) {
+    @PutMapping("/{id}/paid")
+    @PreAuthorize("hasAuthority('PAYROLL_RUN')")
+    public Payroll markPayrollAsPaid(
+            @PathVariable Long id) {
 
-    return payrollService.getPayrollSummary(payPeriod);
-}
-@GetMapping("/filter")
-public List<Payroll> getPayrollsByPayPeriodAndStatus(
-        @RequestParam String payPeriod,
-        @RequestParam String status) {
+        return payrollService.markPayrollAsPaid(id);
+    }
 
-    return payrollService.getPayrollsByPayPeriodAndStatus(
-            payPeriod,
-            status
-    );
-}
-@GetMapping("/{id}/payslip")
-public PayslipResponse getPayslip(
-        @PathVariable Long id) {
+    @GetMapping("/period/{payPeriod}")
+    @PreAuthorize("hasAuthority('PAYROLL_VIEW')")
+    public List<Payroll> getPayrollsByPayPeriod(
+            @PathVariable String payPeriod) {
 
-    return payrollService.getPayslip(id);
-}
-@GetMapping("/{id}/payslip/pdf")
-public ResponseEntity<byte[]> downloadPayslipPdf(
-        @PathVariable Long id) {
+        return payrollService.getPayrollsByPayPeriod(payPeriod);
+    }
 
-    PayslipResponse payslip =
-            payrollService.getPayslip(id);
+    @GetMapping("/status/{status}")
+    @PreAuthorize("hasAuthority('PAYROLL_VIEW')")
+    public List<Payroll> getPayrollsByStatus(
+            @PathVariable String status) {
 
-    byte[] pdf =
-            payslipPdfService.generatePayslipPdf(payslip);
+        return payrollService.getPayrollsByStatus(status);
+    }
 
-    return ResponseEntity.ok()
-            .header(
-                    HttpHeaders.CONTENT_DISPOSITION,
-                    "attachment; filename=payslip-" + id + ".pdf"
-            )
-            .contentType(MediaType.APPLICATION_PDF)
-            .body(pdf);
-}
-@GetMapping("/me")
-@PreAuthorize("hasRole('EMPLOYEE')")
-public ResponseEntity<List<Payroll>> getMyPayrollHistory(
-        @AuthenticationPrincipal Jwt jwt) {
+    @GetMapping("/summary/{payPeriod}")
+    @PreAuthorize("hasAuthority('PAYROLL_VIEW')")
+    public PayrollSummaryResponse getPayrollSummary(
+            @PathVariable String payPeriod) {
 
-    Long employeeId =
-            ((Number) jwt.getClaim("employeeId")).longValue();
+        return payrollService.getPayrollSummary(payPeriod);
+    }
 
-    return ResponseEntity.ok(
-            payrollService.getMyPayrollHistory(employeeId)
-    );
-}
-@GetMapping("/me/{payrollId}/payslip")
-@PreAuthorize("hasRole('EMPLOYEE')")
-public ResponseEntity<PayslipResponse> getMyPayslip(
-        @PathVariable Long payrollId,
-        @AuthenticationPrincipal Jwt jwt) {
+    @GetMapping("/filter")
+    @PreAuthorize("hasAuthority('PAYROLL_VIEW')")
+    public List<Payroll> getPayrollsByPayPeriodAndStatus(
+            @RequestParam String payPeriod,
+            @RequestParam String status) {
 
-    Long employeeId =
-            ((Number) jwt.getClaim("employeeId")).longValue();
+        return payrollService.getPayrollsByPayPeriodAndStatus(
+                payPeriod,
+                status
+        );
+    }
 
-    PayslipResponse payslip =
-            payrollService.getEmployeePayslip(
-                    employeeId,
-                    payrollId
-            );  
+    @GetMapping("/{id}/payslip")
+    @PreAuthorize("hasAuthority('PAYROLL_VIEW')")
+    public PayslipResponse getPayslip(
+            @PathVariable Long id) {
 
-    return ResponseEntity.ok(payslip);
-}
+        return payrollService.getPayslip(id);
+    }
+
+    @GetMapping("/{id}/payslip/pdf")
+    @PreAuthorize("hasAuthority('PAYROLL_VIEW')")
+    public ResponseEntity<byte[]> downloadPayslipPdf(
+            @PathVariable Long id) {
+
+        PayslipResponse payslip =
+                payrollService.getPayslip(id);
+
+        byte[] pdf =
+                payslipPdfService.generatePayslipPdf(payslip);
+
+        return ResponseEntity.ok()
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=payslip-" + id + ".pdf"
+                )
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    public ResponseEntity<List<Payroll>> getMyPayrollHistory(
+            @AuthenticationPrincipal Jwt jwt) {
+
+        Long employeeId =
+                ((Number) jwt.getClaim("employeeId")).longValue();
+
+        return ResponseEntity.ok(
+                payrollService.getMyPayrollHistory(employeeId)
+        );
+    }
+
+    @GetMapping("/me/{payrollId}/payslip")
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    public ResponseEntity<PayslipResponse> getMyPayslip(
+            @PathVariable Long payrollId,
+            @AuthenticationPrincipal Jwt jwt) {
+
+        Long employeeId =
+                ((Number) jwt.getClaim("employeeId")).longValue();
+
+        PayslipResponse payslip =
+                payrollService.getEmployeePayslip(
+                        employeeId,
+                        payrollId
+                );
+
+        return ResponseEntity.ok(payslip);
+    }
 }

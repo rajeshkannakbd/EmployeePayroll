@@ -41,5 +41,9 @@ public interface EmployeeMapper {
         target = "departmentName",
         source = "department.departmentName"
     )
+    @Mapping(
+        target = "role",
+        source = "role.code"
+    )
     EmployeeResponse toResponse(Employee employee);
 }

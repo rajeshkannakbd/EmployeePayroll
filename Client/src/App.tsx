@@ -19,10 +19,10 @@ import AttendanceManagement from "./pages/AttendanceManagement";
 import GeneratePayroll from "./pages/GeneratePayroll";
 import PayrollHistory from "./pages/PayrollHistory";
 import Payslip from "./pages/Payslip";
-import DepartmentManagement from "./pages/DepartmentManagement"
+import DepartmentManagement from "./pages/DepartmentManagement";
 import EmployeeAttendance from "./pages/EmployeeAttendance";
 import EmployeePayrollHistory from "./pages/EmployeePayrollHistory";
-import Signup from "./pages/Signup";
+import Settings from "./pages/Settings";
 import ChangePassword from "./pages/ChangePassword";
 
 function App() {
@@ -77,14 +77,14 @@ function App() {
                 element={<DepartmentManagement />}
               />
               <Route
-    path="/my-attendance"
-    element={<EmployeeAttendance />}
-/>
+                  path="/my-attendance"
+                  element={<EmployeeAttendance />}
+              />
 
-<Route
-    path="/my-payroll"
-    element={<EmployeePayrollHistory />}
-/>
+              <Route
+                  path="/my-payroll"
+                  element={<EmployeePayrollHistory />}
+              />
               <Route
                 path="/payroll/generate"
                 element={<GeneratePayroll />}
@@ -94,6 +94,8 @@ function App() {
                 path="/payroll/history"
                 element={<PayrollHistory />}
               />
+              <Route path="/settings" element={<Settings />} />
+
 
             </Route>
 
@@ -112,6 +114,7 @@ function App() {
             path="*"
             element={<Navigate to="/" replace />}
           />
+
 
         </Routes>
       </BrowserRouter>

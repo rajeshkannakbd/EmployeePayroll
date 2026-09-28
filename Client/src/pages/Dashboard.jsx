@@ -83,7 +83,7 @@ const StatusBadge = ({ status }) => {
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { auth } = useAuth();
+  const { auth, hasPermission,  } = useAuth();
 
   const role = auth?.role;
   const currentMonth = getCurrentMonth();
