@@ -889,9 +889,10 @@ function DepartmentManagement() {
         >
           <div
             ref={formRef}
-            className="w-full max-w-lg overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl"
+            // ⚙️ FIX: Changed to 'flex flex-col' and removed 'overflow-y-auto' from this parent wrapper
+            className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-xl border border-slate-200 bg-white shadow-2xl"
           >
-            {/* MODAL HEADER */}
+            {/* MODAL HEADER (Always Sticky/Pinned) */}
             <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
               <div>
                 <h2
@@ -919,49 +920,54 @@ function DepartmentManagement() {
               </button>
             </div>
 
-            {/* MODAL BODY */}
+            {/* SCROLLABLE FORM BODY CONTAINER */}
+            {/* ⚙️ FIX: Added 'form' as the direct layout flex element with 'overflow-y-auto' */}
             <form
               onSubmit={handleSubmit}
               noValidate
-              className="space-y-4 p-4"
+              className="flex flex-1 flex-col overflow-hidden" 
             >
-              {error && (
-                <div className="rounded-lg border border-red-100 bg-red-50 px-3 py-2.5">
-                  <p className="text-xs font-medium text-red-600">
-                    {error}
-                  </p>
+              {/* INPUT SCROLL ZONE */}
+              {/* ⚙️ FIX: Pushed inputs into an internal scrollable div. It scrolls only if content overflows */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {error && (
+                  <div className="rounded-lg border border-red-100 bg-red-50 px-3 py-2.5">
+                    <p className="text-xs font-medium text-red-600">{error}</p>
+                  </div>
+                )}
+
+                <div>
+                  <label
+                    htmlFor="departmentName"
+                    className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-500"
+                  >
+                    Department Name
+                    <span className="ml-1 text-red-500">*</span>
+                  </label>
+
+                  <input
+                    id="departmentName"
+                    type="text"
+                    name="departmentName"
+                    value={form.departmentName}
+                    onChange={handleChange}
+                    placeholder="e.g. Human Resources"
+                    disabled={loading}
+                    autoFocus
+                    className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none transition disabled:bg-slate-100 ${
+                      fieldError
+                        ? "border-red-400 bg-red-50 focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                        : "border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                    }`}
+                  />
+
+                  <FieldError message={fieldError} />
                 </div>
-              )}
-
-              <div>
-                <label
-                  htmlFor="departmentName"
-                  className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-500"
-                >
-                  Department Name
-                  <span className="ml-1 text-red-500">*</span>
-                </label>
-
-                <input
-                  id="departmentName"
-                  type="text"
-                  name="departmentName"
-                  value={form.departmentName}
-                  onChange={handleChange}
-                  placeholder="e.g. Human Resources"
-                  disabled={loading}
-                  autoFocus
-                  className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none transition disabled:bg-slate-100 ${
-                    fieldError
-                      ? "border-red-400 bg-red-50 focus:border-red-500 focus:ring-2 focus:ring-red-100"
-                      : "border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                  }`}
-                />
-
-                <FieldError message={fieldError} />
               </div>
 
-              <div className="flex justify-end gap-2 border-t border-slate-100 pt-3">
+              {/* MODAL FOOTER (Sticky/Pinned only when content overflows) */}
+              {/* ⚙️ FIX: Removed 'mt-3' and 'pt-3', replaced with padding-4 and border top anchor styling */}
+              <div className="flex justify-end gap-2 border-t border-slate-100 p-4 bg-white rounded-b-xl">
                 <button
                   type="button"
                   onClick={handleCancel}
@@ -994,6 +1000,7 @@ function DepartmentManagement() {
             </form>
           </div>
         </div>
+
       )}
 
     </div>

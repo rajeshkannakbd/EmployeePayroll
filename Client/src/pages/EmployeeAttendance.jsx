@@ -205,7 +205,7 @@ const EmployeeAttendance = () => {
                         <button
                             type="button"
                             onClick={fetchAttendance}
-                            className="mt-3 rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-green-700"
+                            className="mt-3 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-green-700"
                         >
                             Try Again
                         </button>

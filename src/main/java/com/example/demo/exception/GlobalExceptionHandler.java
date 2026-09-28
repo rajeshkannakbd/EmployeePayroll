@@ -228,30 +228,13 @@ public class GlobalExceptionHandler {
 public ResponseEntity<Map<String, Object>> handleHttpMessageNotReadable(
         HttpMessageNotReadableException ex) {
 
-    System.out.println();
-    System.out.println("==============================================");
-    System.out.println("JSON DESERIALIZATION ERROR");
-    System.out.println("==============================================");
-
-    System.out.println("MESSAGE:");
-    System.out.println(ex.getMessage());
-
-    System.out.println();
-    System.out.println("MOST SPECIFIC CAUSE:");
 
     Throwable cause = ex.getMostSpecificCause();
 
     if (cause != null) {
-        System.out.println(cause.getClass().getName());
-        System.out.println(cause.getMessage());
-
-        System.out.println();
-        System.out.println("STACK TRACE:");
         cause.printStackTrace();
     }
 
-    System.out.println("==============================================");
-    System.out.println();
 
     Map<String, Object> response = new LinkedHashMap<>();
 

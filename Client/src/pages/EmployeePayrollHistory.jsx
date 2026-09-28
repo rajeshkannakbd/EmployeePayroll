@@ -135,7 +135,7 @@ const EmployeePayrollHistory = () => {
 
                     <button
                         onClick={fetchPayrollHistory}
-                        className="mt-3 rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white"
+                        className="mt-3 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white"
                     >
                         Try Again
                     </button>
